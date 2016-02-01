@@ -1,4 +1,4 @@
-package org.opencsp.csta;
+package org.opencsp.csta.messages;
 
 /**
  * The EventCause parameter type provides additional information on why an event was generated.
