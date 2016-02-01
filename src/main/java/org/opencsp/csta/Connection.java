@@ -1,7 +1,11 @@
 package org.opencsp.csta;
 
-/**
- * Created by jonas.koeritz on 01.02.2016.
- */
+import org.opencsp.csta.messages.encoding.xml.CSTAXml;
+
 public class Connection {
+    @CSTAXml(name="callID")
+    private String callId;
+
+    @CSTAXml(name="deviceID")
+    DeviceId deviceId;
 }
