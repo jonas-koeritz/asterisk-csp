@@ -1,4 +1,6 @@
 # asterisk-csp
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat)
+
 A CSTA III XML service provider for Asterisk using the Asterisk Manager Interface
 
 ## History
