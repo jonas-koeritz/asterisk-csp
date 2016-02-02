@@ -8,6 +8,7 @@ public class Provider {
     private List<Device> devices;
     private List<Connection> connections;
     private List<Call> calls;
+    private List<MonitorPoint> monitorPoints;
 
     /**
      * Search for connections participating in the Call specified by call
