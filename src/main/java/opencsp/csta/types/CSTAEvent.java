@@ -1,7 +1,5 @@
-package opencsp.csta;
+package opencsp.csta.types;
 
-
-import opencsp.csta.EventCause;
 
 public class CSTAEvent {
     protected EventCause cause = EventCause.Normal;

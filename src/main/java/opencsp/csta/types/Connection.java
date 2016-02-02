@@ -1,4 +1,4 @@
-package opencsp.csta;
+package opencsp.csta.types;
 
 import opencsp.csta.xml.CSTAXmlSerializable;
 import org.w3c.dom.Document;

@@ -2,9 +2,9 @@ package opencsp.test;
 
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
-import opencsp.csta.Connection;
-import opencsp.csta.CrossReferenceId;
-import opencsp.csta.DeviceId;
+import opencsp.csta.types.Connection;
+import opencsp.csta.types.CrossReferenceId;
+import opencsp.csta.types.DeviceId;
 import opencsp.csta.messages.ServiceInitiatedEvent;
 import opencsp.csta.xml.CSTAXmlEncoder;
 import org.w3c.dom.Document;

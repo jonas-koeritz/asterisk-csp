@@ -9,4 +9,6 @@ public interface CSTAXmlSerializable {
     default Element toXmlElement(Document document) {
         return toXmlElement(document, getClass().getSimpleName());
     }
+
+
 }

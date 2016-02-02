@@ -1,8 +1,6 @@
 package opencsp.csta.messages;
 
-import opencsp.csta.CrossReferenceId;
-import opencsp.csta.LocalConnectionState;
-import opencsp.csta.*;
+import opencsp.csta.types.*;
 import opencsp.csta.xml.CSTAXmlSerializable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

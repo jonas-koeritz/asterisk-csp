@@ -1,9 +1,8 @@
-package opencsp.csta;
+package opencsp.csta.types;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Random;
 
 public class MonitorPoint {
     private static List<Integer> usedCrossReferenceIds;

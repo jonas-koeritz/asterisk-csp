@@ -1,4 +1,4 @@
-package opencsp.csta;
+package opencsp.csta.types;
 
 import java.util.List;
 
