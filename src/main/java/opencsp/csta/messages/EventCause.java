@@ -1,4 +1,8 @@
-package org.opencsp.csta.messages;
+package opencsp.csta.messages;
+
+import opencsp.csta.messages.xml.CSTAXmlSerializable;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * The EventCause parameter type provides additional information on why an event was generated.
@@ -7,7 +11,7 @@ package org.opencsp.csta.messages;
  * @see "ECMA-323 - 9.18 - Event Cause"
  * @see "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-323.pdf"
  */
-public enum EventCause {
+public enum EventCause implements CSTAXmlSerializable {
     ACDBusy("aCDBusy"),
     ACDForward("aCDForward"),
     ACDSaturated("aCDSaturated"),
@@ -141,5 +145,15 @@ public enum EventCause {
 
     public String toString() {
         return this.cause;
+    }
+
+    public Element toXmlElement(Document doc, String tagName) {
+        Element e = doc.createElement(tagName);
+        e.setTextContent(cause);
+        return e;
+    }
+
+    public Element toXmlElement(Document doc) {
+        return toXmlElement(doc, "cause");
     }
 }
