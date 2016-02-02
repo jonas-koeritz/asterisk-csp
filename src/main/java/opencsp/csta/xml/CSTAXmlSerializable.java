@@ -1,4 +1,4 @@
-package opencsp.csta.messages.xml;
+package opencsp.csta.xml;
 
 
 import org.w3c.dom.Document;
