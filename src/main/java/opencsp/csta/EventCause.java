@@ -1,4 +1,4 @@
-package opencsp.csta.messages;
+package opencsp.csta;
 
 import opencsp.csta.messages.xml.CSTAXmlSerializable;
 import org.w3c.dom.Document;
