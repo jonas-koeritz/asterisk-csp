@@ -17,8 +17,4 @@ public class BackInServiceEvent extends CSTAEvent implements CSTAXmlSerializable
         e.appendChild(cause.toXmlElement(doc));
         return e;
     }
-
-    public Element toXmlElement(Document doc) {
-        return toXmlElement(doc, "BackInServiceEvent");
-    }
 }

@@ -34,8 +34,4 @@ public class ConnectionClearedEvent extends CSTAEvent implements CSTAXmlSerializ
         e.appendChild(cause.toXmlElement(doc));
         return e;
     }
-
-    public Element toXmlElement(Document doc) {
-        return toXmlElement(doc, "ConnectionClearedEvent");
-    }
 }

@@ -20,8 +20,4 @@ public class OutOfServiceEvent extends CSTAEvent implements CSTAXmlSerializable 
         e.appendChild(cause.toXmlElement(doc));
         return e;
     }
-
-    public Element toXmlElement(Document doc) {
-        return toXmlElement(doc, "OutOfServiceEvent");
-    }
 }

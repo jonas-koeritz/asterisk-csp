@@ -5,10 +5,10 @@ import opencsp.csta.xml.CSTAXmlSerializable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-public class FailedEvent extends CSTAEvent implements CSTAXmlSerializable {
+public class NetworkReachedEvent extends CSTAEvent implements CSTAXmlSerializable {
     private CrossReferenceId monitorCrossRefID;
-    private Connection failedConnection;
-    private DeviceId failingDevice;
+    private Connection outboundConnection;
+    private DeviceId networkInterfaceUsed;
     private DeviceId callingDevice;
     private DeviceId calledDevice;
     private DeviceId lastRedirectionDevice;
@@ -17,8 +17,8 @@ public class FailedEvent extends CSTAEvent implements CSTAXmlSerializable {
     public Element toXmlElement(Document doc, String tagName) {
         Element e = doc.createElement(tagName);
         e.appendChild(monitorCrossRefID.toXmlElement(doc));
-        e.appendChild(failedConnection.toXmlElement(doc, "failedConnection"));
-        e.appendChild(failingDevice.toXmlElement(doc, "failingDevice"));
+        e.appendChild(outboundConnection.toXmlElement(doc, "outboundConnection"));
+        e.appendChild(networkInterfaceUsed.toXmlElement(doc, "networkInterfaceUsed"));
         e.appendChild(callingDevice.toXmlElement(doc, "callingDevice"));
         e.appendChild(calledDevice.toXmlElement(doc, "calledDevice"));
         if(lastRedirectionDevice != null) {

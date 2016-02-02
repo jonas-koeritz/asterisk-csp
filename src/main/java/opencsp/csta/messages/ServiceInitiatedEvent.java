@@ -29,8 +29,4 @@ public class ServiceInitiatedEvent extends CSTAEvent implements CSTAXmlSerializa
         e.appendChild(cause.toXmlElement(doc));
         return e;
     }
-
-    public Element toXmlElement(Document doc) {
-        return toXmlElement(doc, "ServiceInitiatedEvent");
-    }
 }
