@@ -10,11 +10,8 @@ import org.w3c.dom.Element;
 
 public class OriginatedEvent extends CSTAEvent implements CSTAXmlSerializable {
     CrossReferenceId monitorCrossRefID;
-
     Connection originatedConnection;
-
     DeviceId callingDevice;
-
     DeviceId calledDevice;
 
     LocalConnectionState localConnectionInfo = LocalConnectionState.Connected;
