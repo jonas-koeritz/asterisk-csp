@@ -6,7 +6,6 @@ import org.w3c.dom.Element;
 
 public class Connection implements CSTAXmlSerializable {
     String callId;
-
     DeviceId deviceId;
 
     public Connection(String callId, DeviceId deviceId) {
@@ -27,5 +26,9 @@ public class Connection implements CSTAXmlSerializable {
             e.appendChild(deviceId.toXmlElement(doc, "deviceID"));
         }
         return e;
+    }
+
+    public String getCallId() {
+        return callId;
     }
 }
