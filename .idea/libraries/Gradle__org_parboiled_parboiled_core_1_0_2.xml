@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.parboiled:parboiled-core:1.0.2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.parboiled/parboiled-core/1.0.2/7f8abb816e828aae4731f1cd78f9b14746d5102f/parboiled-core-1.0.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.parboiled/parboiled-core/1.0.2/e85ddb3182ccbf4ffb096fe631bea6aef5f8423/parboiled-core-1.0.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

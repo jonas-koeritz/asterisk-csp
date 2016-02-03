@@ -1,0 +1,28 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: #fafafa;
+}
+
+.sidebar {
+    width: 270px;
+    border-right: 1px solid #e5e5e5;
+    background: #fff;
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+}
+
+.sidebar > paper-toolbar {
+    background: #fff;
+    color: #606060;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.sidebar paper-icon-button {
+    margin-right: 10px;
+}

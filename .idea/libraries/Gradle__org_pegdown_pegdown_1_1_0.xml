@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.pegdown:pegdown:1.1.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.pegdown/pegdown/1.1.0/bcc0c5b025b09ab85bb80a8311ce5c015d005b/pegdown-1.1.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.pegdown/pegdown/1.1.0/994e4c6bd96da7c7e2a65e4cc76b48ddf417aaca/pegdown-1.1.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

@@ -1,0 +1,21 @@
+{
+  "name": "opencsp-wbm",
+  "homepage": "https://github.com/jonas-koeritz/asterisk-csp",
+  "authors": [
+    "Jonas Köritz <jonas.koeritz@gmail.com>"
+  ],
+  "description": "Web Based Management for openCSP",
+  "moduleType": [],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.2.0",
+    "paper-elements": "PolymerElements/paper-elements#^1.0.7"
+  }
+}

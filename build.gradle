@@ -1,4 +1,5 @@
 apply plugin: 'java'
+apply plugin: 'application'
 
 version = 0.1
 
@@ -11,6 +12,9 @@ sourceSets {
         java {
             srcDir 'src/main/java'
         }
+        resources {
+            srcDir 'src/main/resources'
+        }
     }
 
     test {
@@ -21,5 +25,14 @@ sourceSets {
 }
 
 dependencies {
+    compile 'com.sparkjava:spark-core:2.3'
+    compile 'com.sparkjava:spark-template-jade:2.3'
+
     testCompile 'junit:junit:4.12'
 }
+
+jar {
+
+}
+
+mainClassName = "opencsp.Main"
