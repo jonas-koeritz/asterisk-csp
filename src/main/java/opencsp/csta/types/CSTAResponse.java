@@ -1,4 +1,4 @@
 package opencsp.csta.types;
 
-public class CSTAResponse {
+public class CSTAResponse extends CSTAMessage {
 }

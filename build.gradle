@@ -27,6 +27,7 @@ sourceSets {
 dependencies {
     compile 'com.sparkjava:spark-core:2.3'
     compile 'com.sparkjava:spark-template-jade:2.3'
+    compile 'io.netty:netty-all:5.0.0.Alpha2'
 
     testCompile 'junit:junit:4.12'
 }
