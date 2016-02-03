@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import opencsp.Log;
-import opencsp.UnsupportedMessageFormatException;
+import opencsp.exceptions.UnsupportedMessageFormatException;
 
 import java.util.List;
 

@@ -2,10 +2,9 @@ package opencsp.tcp;
 
 import io.netty.buffer.ByteBuf;
 import opencsp.Log;
-import opencsp.UnsupportedMessageFormatException;
+import opencsp.exceptions.UnsupportedMessageFormatException;
 import opencsp.csta.types.CSTAMessage;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
@@ -14,7 +13,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.charset.Charset;
 

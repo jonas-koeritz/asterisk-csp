@@ -1,4 +1,4 @@
-package opencsp;
+package opencsp.exceptions;
 
 public class UnsupportedMessageFormatException extends Exception {
     public UnsupportedMessageFormatException() {
