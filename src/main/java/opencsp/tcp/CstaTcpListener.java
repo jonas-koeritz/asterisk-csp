@@ -32,7 +32,7 @@ public class CstaTcpListener {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new CstaTcpMessageParser());
+                            ch.pipeline().addLast(new CstaTcpMessageDecoder());
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)

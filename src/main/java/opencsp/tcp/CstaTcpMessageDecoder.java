@@ -8,8 +8,8 @@ import opencsp.exceptions.UnsupportedMessageFormatException;
 
 import java.util.List;
 
-public class CstaTcpMessageParser extends ByteToMessageDecoder {
-    private static final String TAG = "CstaTcpMessageParser";
+public class CstaTcpMessageDecoder extends ByteToMessageDecoder {
+    private static final String TAG = "CstaTcpMessageDecoder";
 
     @Override
     protected void decode(ChannelHandlerContext context, ByteBuf in, List<Object> out) {
