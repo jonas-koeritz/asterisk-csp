@@ -1,5 +1,8 @@
 # asterisk-csp
+
+[![Join the chat at https://gitter.im/jonas-koeritz/asterisk-csp](https://badges.gitter.im/jonas-koeritz/asterisk-csp.svg)](https://gitter.im/jonas-koeritz/asterisk-csp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat)
+[![Gratipay User](https://img.shields.io/gratipay/user/jonas-koeritz.svg)](https://gratipay.com/~jonas-koeritz/)
 
 A CSTA III XML service provider for Asterisk using the Asterisk Manager Interface
 
