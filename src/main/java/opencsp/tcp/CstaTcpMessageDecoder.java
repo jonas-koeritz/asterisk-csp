@@ -8,6 +8,9 @@ import opencsp.exceptions.UnsupportedMessageFormatException;
 
 import java.util.List;
 
+/**
+ * Handles fragmentation and concatenation of CSTA Tcp Messages
+ */
 public class CSTATcpMessageDecoder extends ByteToMessageDecoder {
     private static final String TAG = "CSTATcpMessageDecoder";
 

@@ -33,6 +33,7 @@ public class CSTATcpListener {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline().addLast(new CSTATcpMessageDecoder());
+                            ch.pipeline().addLast(new CSTATcpMessageHandler());
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)
