@@ -8,8 +8,8 @@ import opencsp.exceptions.UnsupportedMessageFormatException;
 
 import java.util.List;
 
-public class CstaTcpMessageDecoder extends ByteToMessageDecoder {
-    private static final String TAG = "CstaTcpMessageDecoder";
+public class CSTATcpMessageDecoder extends ByteToMessageDecoder {
+    private static final String TAG = "CSTATcpMessageDecoder";
 
     @Override
     protected void decode(ChannelHandlerContext context, ByteBuf in, List<Object> out) {
@@ -21,7 +21,7 @@ public class CstaTcpMessageDecoder extends ByteToMessageDecoder {
         //One or more complete messages are inside the buffer
         if(in.readableBytes() >= in.getShort(2)) {
             try {
-                CstaTcpMessage msg = new CstaTcpMessage(in.readBytes(in.getShort(2)));
+                CSTATcpMessage msg = new CSTATcpMessage(in.readBytes(in.getShort(2)));
                 Log.d(TAG, "Received CSTA Message: " + msg.toString());
                 out.add(msg);
             } catch (UnsupportedMessageFormatException ex) {

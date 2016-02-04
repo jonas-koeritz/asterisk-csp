@@ -1,7 +1,7 @@
 package opencsp;
 
 
-import opencsp.tcp.CstaTcpListener;
+import opencsp.tcp.CSTATcpListener;
 import opencsp.wbm.Wbm;
 
 public class Main {
@@ -10,7 +10,7 @@ public class Main {
         Wbm wbm = new Wbm(8080);
         wbm.start();
 
-        CstaTcpListener cstaListener = new CstaTcpListener(8800);
+        CSTATcpListener cstaListener = new CSTATcpListener(8800);
         cstaListener.run();
     }
 }

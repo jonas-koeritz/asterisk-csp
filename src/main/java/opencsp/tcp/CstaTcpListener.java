@@ -11,12 +11,12 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import opencsp.Log;
 
-public class CstaTcpListener {
-    private static final String TAG = "CstaTcpListener";
+public class CSTATcpListener {
+    private static final String TAG = "CSTATcpListener";
 
     private int port = 8800;
 
-    public CstaTcpListener(int port) {
+    public CSTATcpListener(int port) {
         this.port = port;
     }
 
@@ -32,7 +32,7 @@ public class CstaTcpListener {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new CstaTcpMessageDecoder());
+                            ch.pipeline().addLast(new CSTATcpMessageDecoder());
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)
