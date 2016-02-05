@@ -10,14 +10,17 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import opencsp.Log;
+import opencsp.csta.Provider;
 
 public class CSTATcpListener {
     private static final String TAG = "CSTATcpListener";
 
     private int port = 8800;
+    private Provider provider;
 
-    public CSTATcpListener(int port) {
+    public CSTATcpListener(int port, Provider provider) {
         this.port = port;
+        this.provider = provider;
     }
 
     public void run() {
@@ -33,7 +36,7 @@ public class CSTATcpListener {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline().addLast(new CSTATcpMessageDecoder());
-                            ch.pipeline().addLast(new CSTATcpMessageHandler());
+                            ch.pipeline().addLast(new CSTATcpMessageHandler(provider));
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)

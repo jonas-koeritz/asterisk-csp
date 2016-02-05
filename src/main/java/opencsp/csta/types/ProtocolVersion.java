@@ -21,6 +21,14 @@ public class ProtocolVersion implements CSTAXmlSerializable {
 
     }
 
+    public String getProtocolVersion() {
+        return protocolVersion;
+    }
+
+    public void setProtocolVersion(String protocolVersion) {
+        this.protocolVersion = protocolVersion;
+    }
+
     public Element toXmlElement(Document doc, String tagName) {
         Element e = doc.createElement(tagName);
         Element v = doc.createElement("protocolVersion");

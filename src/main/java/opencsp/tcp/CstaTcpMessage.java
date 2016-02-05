@@ -1,6 +1,7 @@
 package opencsp.tcp;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import opencsp.exceptions.UnsupportedMessageFormatException;
 import java.nio.charset.Charset;
 
@@ -32,13 +33,34 @@ public class CSTATcpMessage {
         }
     }
 
+    public ByteBuf toByteBuf() {
+        ByteBuf output = Unpooled.buffer();
+        output.writeByte(0x00);
+        output.writeByte(0x00);
+        output.writeShort(this.length);
+
+        String invokeId = String.format("%04d", this.invokeId);
+        output.writeBytes(invokeId.getBytes());
+        output.writeBytes(this.body.getBytes());
+        return output;
+    }
+
+
     public CSTATcpMessage(int invokeId, String body) {
         this.invokeId = invokeId;
         this.length = body.length() + 8;
         this.body = body;
     }
 
+    public int getInvokeId() {
+        return invokeId;
+    }
+
     public String toString() {
         return "[CSTATcpMessage: invokeId=" + invokeId + ", length=" + length + ", body=" + body + "]";
+    }
+
+    public String getBody() {
+        return body;
     }
 }

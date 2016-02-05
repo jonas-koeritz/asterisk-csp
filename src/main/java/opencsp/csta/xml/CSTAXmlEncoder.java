@@ -1,8 +1,11 @@
 package opencsp.csta.xml;
 
+import opencsp.Log;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -12,8 +15,11 @@ import java.io.StringWriter;
 
 
 public class CSTAXmlEncoder {
+    private static final String TAG = "CSTAXmlEncoder";
+
     private static CSTAXmlEncoder instance = null;
     private static Transformer transformer;
+    private static DocumentBuilder documentBuilder;
 
     public static CSTAXmlEncoder getInstance() {
         if(instance == null) {
@@ -24,6 +30,8 @@ public class CSTAXmlEncoder {
                 transformer.setOutputProperty(OutputKeys.INDENT, "yes");
                 transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
                 transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+
+                documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -46,5 +54,10 @@ public class CSTAXmlEncoder {
             ex.printStackTrace();
         }
         return null;
+    }
+
+    public String toXmlString(CSTAXmlSerializable m) {
+        Document doc = documentBuilder.newDocument();
+        return toXmlString(doc, m.toXmlElement(doc));
     }
 }

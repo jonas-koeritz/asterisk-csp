@@ -1,20 +1,34 @@
 package opencsp.csta;
 
-import opencsp.csta.types.Call;
-import opencsp.csta.types.Connection;
-import opencsp.csta.types.Device;
-import opencsp.csta.types.MonitorPoint;
+import io.netty.channel.Channel;
+import opencsp.Log;
+import opencsp.csta.messages.ResetApplicationSessionTimer;
+import opencsp.csta.messages.StartApplicationSession;
+import opencsp.csta.messages.StartApplicationSessionPosResponse;
+import opencsp.csta.types.*;
+import opencsp.csta.xml.CSTAXmlEncoder;
+import opencsp.csta.xml.CSTAXmlSerializable;
+import opencsp.tcp.CSTATcpMessage;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class Provider {
+    private static final String TAG = "Provider";
+
     private List<Device> devices;
     private List<Connection> connections;
     private List<Call> calls;
     private List<MonitorPoint> monitorPoints;
+    private CSTASessionManager sessionManager;
 
+
+    private int lastCstaSessionId = 0;
+
+    public Provider() {
+        sessionManager = new CSTASessionManager();
+    }
 
     /**
      * Search for connections participating in the Call specified by call
@@ -46,5 +60,48 @@ public class Provider {
         return calls.stream()
                 .filter(c -> c.getCallId().equals(callId))
                 .findFirst().get();
+    }
+
+    public CSTAXmlSerializable startSession(StartApplicationSession message, Channel clientChannel) {
+        int sessionId = getCstaSessionId();
+        sessionManager.newSession(
+                new CSTASession(sessionId,
+                        message.getRequestedProtocolVersion(),
+                        message.getRequestedSessionDuration(),
+                        clientChannel)
+        );
+
+        return new StartApplicationSessionPosResponse(
+                sessionId,
+                message.getRequestedProtocolVersion(),
+                message.getRequestedSessionDuration());
+    }
+
+    private int getCstaSessionId() {
+        return lastCstaSessionId++;
+    }
+
+    public void handleMessage(int invokeId, CSTAMessage message, Channel clientChannel) {
+        CSTAXmlSerializable response = null;
+
+        switch(message.getClass().getSimpleName()) {
+            case "StartApplicationSession":
+                response = startSession((StartApplicationSession)message, clientChannel);
+                break;
+            case "ResetApplicationSessionTimer":
+                ResetApplicationSessionTimer reset = (ResetApplicationSessionTimer)message;
+                response = sessionManager.resetSessionTimers(reset.getSessionID(), reset.getRequestedSessionDuration());
+                break;
+            default:
+                Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
+                break;
+        }
+
+        if(response != null) {
+            CSTATcpMessage tcpResponse = new CSTATcpMessage(invokeId, CSTAXmlEncoder.getInstance().toXmlString(response));
+            Log.d(TAG, "Sending Response to Client (" + clientChannel.remoteAddress().toString() + "):\n" + tcpResponse.getBody());
+            clientChannel.write(tcpResponse.toByteBuf());
+            clientChannel.flush();
+        }
     }
 }

@@ -7,17 +7,17 @@ import org.w3c.dom.Element;
 
 
 public class StartApplicationSessionPosResponse extends CSTAResponse implements CSTAXmlSerializable {
-    private String sessionID;
+    private int sessionID;
     private ProtocolVersion actualProtocolVersion;
     private int actualSessionDuration;
 
-    public StartApplicationSessionPosResponse(String sessionID, ProtocolVersion actualProtocolVersion, int actualSessionDuration) {
+    public StartApplicationSessionPosResponse(int sessionID, ProtocolVersion actualProtocolVersion, int actualSessionDuration) {
         this.sessionID = sessionID;
         this.actualProtocolVersion = actualProtocolVersion;
         this.actualSessionDuration = actualSessionDuration;
     }
 
-    public StartApplicationSessionPosResponse(String sessionID) {
+    public StartApplicationSessionPosResponse(int sessionID) {
         this.sessionID = sessionID;
         this.actualProtocolVersion = new ProtocolVersion();
         this.actualSessionDuration = 150;
@@ -26,9 +26,11 @@ public class StartApplicationSessionPosResponse extends CSTAResponse implements 
     public Element toXmlElement(Document doc, String tagName) {
         Element e = doc.createElement(tagName);
         Element s = doc.createElement("sessionID");
-        s.setTextContent(sessionID);
+        s.setTextContent(Integer.toString(sessionID));
         e.appendChild(s);
-        e.appendChild(actualProtocolVersion.toXmlElement(doc, "actualProtocolVersion"));
+        Element v = doc.createElement("actualProtocolVersion");
+        v.setTextContent(actualProtocolVersion.getProtocolVersion());
+        e.appendChild(v);
         Element d = doc.createElement("actualSessionDuration");
         d.setTextContent(Integer.toString(actualSessionDuration));
         e.appendChild(d);

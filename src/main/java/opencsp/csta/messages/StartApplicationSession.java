@@ -12,6 +12,7 @@ public class StartApplicationSession extends CSTARequest implements CSTAXmlSeria
     private ProtocolVersion requestedProtocolVersion;
     private int requestedSessionDuration;
 
+
     public Element toXmlElement(Document doc, String tagName) {
         Element e = doc.createElement(tagName);
         e.appendChild(applicationInfo.toXmlElement(doc, "applicationInfo"));
@@ -20,5 +21,37 @@ public class StartApplicationSession extends CSTARequest implements CSTAXmlSeria
         v.setTextContent(Integer.toString(requestedSessionDuration));
         e.appendChild(v);
         return e;
+    }
+
+    public StartApplicationSession(String xmlBody) {
+        Document xml = documentFromXmlString(xmlBody);
+        this.applicationInfo = new ApplicationInfo();
+        this.requestedProtocolVersion = new ProtocolVersion();
+
+        if(xml.getElementsByTagName("applicationID").getLength() > 0) {
+            this.applicationInfo.setApplicationID(xml.getElementsByTagName("applicationID").item(0).getTextContent());
+        }
+        if(xml.getElementsByTagName("user").getLength() > 0) {
+            this.applicationInfo.setUser(xml.getElementsByTagName("user").item(0).getTextContent());
+        }
+        if(xml.getElementsByTagName("password").getLength() > 0) {
+            this.applicationInfo.setPassword(xml.getElementsByTagName("password").item(0).getTextContent());
+        }
+
+        if(xml.getElementsByTagName("protocolVersion").getLength() > 0) {
+            this.requestedProtocolVersion.setProtocolVersion(xml.getElementsByTagName("protocolVersion").item(0).getTextContent());
+        }
+
+        if(xml.getElementsByTagName("requestedSessionDuration").getLength() > 0) {
+            this.requestedSessionDuration = Integer.parseInt(xml.getElementsByTagName("requestedSessionDuration").item(0).getTextContent());
+        }
+    }
+
+    public ProtocolVersion getRequestedProtocolVersion() {
+        return requestedProtocolVersion;
+    }
+
+    public int getRequestedSessionDuration() {
+        return requestedSessionDuration;
     }
 }
