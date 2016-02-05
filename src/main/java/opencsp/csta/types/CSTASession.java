@@ -70,6 +70,11 @@ public class CSTASession {
         scheduleTimeout();
     }
 
+    public void cancelSessionTimeouts() {
+        timeoutTimer.cancel();
+        timeoutWarningTimer.cancel();
+    }
+
     public Channel getClientChannel() {
         return clientChannel;
     }

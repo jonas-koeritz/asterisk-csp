@@ -43,24 +43,28 @@ public class CSTATcpMessageHandler extends ChannelHandlerAdapter {
             Document xml = documentBuilder.parse(new InputSource(new StringReader(message.getBody())));
             String messageType = xml.getDocumentElement().getNodeName();
 
-            Class messageClass = messageClasses.stream().filter(c -> c.getSimpleName().equals(messageType)).findFirst().get();
 
-            CSTAMessage parsedMessage = null;
 
-            Constructor[] availableConstructors = messageClass.getDeclaredConstructors();
-            for(Constructor ctor : availableConstructors) {
-                Class<?>[] parameterTypes = ctor.getParameterTypes();
-                if(parameterTypes.length == 1 && parameterTypes[0].equals(String.class)) {
-                    parsedMessage = (CSTAMessage)ctor.newInstance(message.getBody());
+            if( messageClasses.stream().filter(c -> c.getSimpleName().equals(messageType)).count() > 0) {
+                Class messageClass = messageClasses.stream().filter(c -> c.getSimpleName().equals(messageType)).findFirst().get();
+                CSTAMessage parsedMessage = null;
+
+                Constructor[] availableConstructors = messageClass.getDeclaredConstructors();
+                for (Constructor ctor : availableConstructors) {
+                    Class<?>[] parameterTypes = ctor.getParameterTypes();
+                    if (parameterTypes.length == 1 && parameterTypes[0].equals(String.class)) {
+                        parsedMessage = (CSTAMessage) ctor.newInstance(message.getBody());
+                    }
                 }
-            }
 
-            if(parsedMessage == null) {
-                Log.e(TAG, "No matching Message Class found for message type " + messageType);
+                if (parsedMessage == null) {
+                    Log.e(TAG, "No Message Class that could parse message type " + messageType);
+                } else {
+                    provider.handleMessage(message.getInvokeId(), parsedMessage, context.channel());
+                }
             } else {
-                provider.handleMessage(message.getInvokeId(), parsedMessage, context.channel());
+                Log.e(TAG, "No Message class for messageType " + messageType + " found");
             }
-
         } catch (Exception ex) {
             Log.e(TAG, ex.getMessage());
         }

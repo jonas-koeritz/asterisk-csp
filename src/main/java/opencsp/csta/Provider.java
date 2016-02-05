@@ -5,6 +5,7 @@ import opencsp.Log;
 import opencsp.csta.messages.ResetApplicationSessionTimer;
 import opencsp.csta.messages.StartApplicationSession;
 import opencsp.csta.messages.StartApplicationSessionPosResponse;
+import opencsp.csta.messages.StopApplicationSession;
 import opencsp.csta.types.*;
 import opencsp.csta.xml.CSTAXmlEncoder;
 import opencsp.csta.xml.CSTAXmlSerializable;
@@ -83,6 +84,7 @@ public class Provider {
 
     public void handleMessage(int invokeId, CSTAMessage message, Channel clientChannel) {
         CSTAXmlSerializable response = null;
+        boolean disconnectClient = false;
 
         switch(message.getClass().getSimpleName()) {
             case "StartApplicationSession":
@@ -91,6 +93,11 @@ public class Provider {
             case "ResetApplicationSessionTimer":
                 ResetApplicationSessionTimer reset = (ResetApplicationSessionTimer)message;
                 response = sessionManager.resetSessionTimers(reset.getSessionID(), reset.getRequestedSessionDuration());
+                break;
+            case "StopApplicationSession":
+                StopApplicationSession stop = (StopApplicationSession)message;
+                response = sessionManager.removeSession(sessionManager.getSessionById(stop.getSessionID()));
+                disconnectClient = true;
                 break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
@@ -103,5 +110,14 @@ public class Provider {
             clientChannel.write(tcpResponse.toByteBuf());
             clientChannel.flush();
         }
+
+        if(disconnectClient) {
+            Log.i(TAG, "Closing connection to Client (" + clientChannel.remoteAddress().toString() + ")");
+            clientChannel.close();
+        }
+    }
+
+    public CSTASessionManager getSessionManager() {
+        return sessionManager;
     }
 }

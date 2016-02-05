@@ -2,6 +2,8 @@ body {
     margin: 0;
     padding: 0;
     background: #fafafa;
+    cellspacing: 0;
+    cellpadding: 0;
 }
 
 .sidebar {
@@ -15,6 +17,25 @@ body {
     top: 0;
     left: 0;
     height: 100%;
+}
+
+table {
+
+}
+
+th {
+    text-align: left;
+}
+
+td, th {
+    border-left: 1px solid #000;
+    border-bottom: 1px solid #000;
+    margin: 0;
+    padding-left: 10px;
+}
+
+td:first-child, th:first-child {
+    border-left: none;
 }
 
 .sidebar > paper-toolbar {
