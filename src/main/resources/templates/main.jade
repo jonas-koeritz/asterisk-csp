@@ -14,3 +14,17 @@ html
                     tr
                         td #{session.getSessionId()}
                         td #{session.getClientChannel().remoteAddress()}
+
+        h3 Devices
+        table
+            thead
+                tr
+                    th Device ID
+                    th Device Category
+                    th State
+            tbody
+                each device in devices
+                    tr
+                        td #{device.getDeviceId()}
+                        td #{device.getCategory()}
+                        td #{device.getState()}

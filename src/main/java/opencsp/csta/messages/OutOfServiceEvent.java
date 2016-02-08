@@ -11,7 +11,7 @@ import org.w3c.dom.Element;
 public class OutOfServiceEvent extends CSTAEvent implements CSTAXmlSerializable {
     private CrossReferenceId monitorCrossRefID;
     private DeviceId subjectDeviceId;
-    private EventCause cause;
+    private EventCause cause = EventCause.Normal;
 
     public Element toXmlElement(Document doc, String tagName) {
         Element e = doc.createElement(tagName);
@@ -19,5 +19,10 @@ public class OutOfServiceEvent extends CSTAEvent implements CSTAXmlSerializable 
         e.appendChild(subjectDeviceId.toXmlElement(doc, "device"));
         e.appendChild(cause.toXmlElement(doc));
         return e;
+    }
+
+    public OutOfServiceEvent(CrossReferenceId crossReferenceId, DeviceId deviceId) {
+        this.monitorCrossRefID = crossReferenceId;
+        this.subjectDeviceId = deviceId;
     }
 }

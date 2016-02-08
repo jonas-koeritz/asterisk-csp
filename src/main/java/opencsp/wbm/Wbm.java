@@ -18,6 +18,7 @@ public class Wbm {
 
         Map<String, Object> map = new HashMap<>();
         map.put("sessions", provider.getSessionManager().getSessions());
+        map.put("devices", provider.getDevices());
 
         staticFileLocation("/public");
         get("/", (req, res) -> new ModelAndView(map, "main"), new JadeTemplateEngine());

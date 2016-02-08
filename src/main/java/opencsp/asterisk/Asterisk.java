@@ -2,6 +2,10 @@ package opencsp.asterisk;
 
 import opencsp.Log;
 import opencsp.csta.Provider;
+import opencsp.csta.types.Device;
+import opencsp.csta.types.DeviceCategory;
+import opencsp.csta.types.DeviceState;
+import opencsp.devices.SIPPhone;
 import org.apache.commons.io.IOExceptionWithCause;
 import org.asteriskjava.manager.*;
 import org.asteriskjava.manager.action.ManagerAction;
@@ -9,6 +13,7 @@ import org.asteriskjava.manager.action.SipPeersAction;
 import org.asteriskjava.manager.action.SipShowPeerAction;
 import org.asteriskjava.manager.event.ManagerEvent;
 import org.asteriskjava.manager.event.PeerEntryEvent;
+import org.asteriskjava.manager.event.PeerStatusEvent;
 
 public class Asterisk implements ManagerEventListener {
     private static final String TAG = "Asterisk";
@@ -40,11 +45,46 @@ public class Asterisk implements ManagerEventListener {
 
         switch(event.getClass().getSimpleName()) {
             case "PeerEntryEvent":
-                PeerEntryEvent p = (PeerEntryEvent)event;
+                PeerEntryEvent peerEntryEvent = (PeerEntryEvent)event;
+                if(peerEntryEvent.getDynamic()) {
+                    SIPPhone d = new SIPPhone(peerEntryEvent.getObjectName(), peerEntryEvent.getIpAddress(), peerEntryEvent.getIpPort());
+                    if (peerEntryEvent.getStatus().contains("OK")) {
+                        d.setState(DeviceState.Idle);
+                    } else if (peerEntryEvent.getStatus().contains("UNKNOWN")) {
+                        d.setState(DeviceState.Unknown);
+                    } else if (peerEntryEvent.getStatus().contains("UNREACHABLE")) {
+                        d.setState(DeviceState.Unavailable);
+                    }
+                    provider.addDevice(d);
+                } else {
+                    Device d = new Device(peerEntryEvent.getObjectName());
+                    d.setCategory(DeviceCategory.NetworkInterface);
+                    d.setState(DeviceState.Idle);
+                    provider.addDevice(d);
+                }
+                break;
+            case "PeerStatusEvent":
+                PeerStatusEvent peerStatusEvent = (PeerStatusEvent)event;
+                Device d = provider.findDeviceById(peerToDeviceId(peerStatusEvent.getPeer()));
+                if(peerStatusEvent.getPeerStatus().equals("Registered")) {
+                    if(d.getState().equals(DeviceState.Unavailable)) {
+                        provider.backInService(d);
+                    }
+                    d.setState(DeviceState.Idle);
+                } else if(peerStatusEvent.getPeerStatus().equals("Unregistered")) {
+                    if(!d.getState().equals(DeviceState.Unavailable)) {
+                        provider.outOfService(d);
+                    }
+                    d.setState(DeviceState.Unavailable);
+                }
                 break;
             default:
                 break;
         }
+    }
+
+    private String peerToDeviceId(String peer) {
+        return peer.split("/")[peer.split("/").length - 1];
     }
 
     public void stop() {

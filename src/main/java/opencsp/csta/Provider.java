@@ -2,17 +2,16 @@ package opencsp.csta;
 
 import io.netty.channel.Channel;
 import opencsp.Log;
-import opencsp.csta.messages.ResetApplicationSessionTimer;
-import opencsp.csta.messages.StartApplicationSession;
-import opencsp.csta.messages.StartApplicationSessionPosResponse;
-import opencsp.csta.messages.StopApplicationSession;
+import opencsp.csta.messages.*;
 import opencsp.csta.types.*;
 import opencsp.csta.xml.CSTAXmlEncoder;
 import opencsp.csta.xml.CSTAXmlSerializable;
 import opencsp.tcp.CSTATcpMessage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Provider {
@@ -21,14 +20,17 @@ public class Provider {
     private List<Device> devices;
     private List<Connection> connections;
     private List<Call> calls;
-    private List<MonitorPoint> monitorPoints;
     private CSTASessionManager sessionManager;
 
 
     private int lastCstaSessionId = 0;
 
     public Provider() {
+
         sessionManager = new CSTASessionManager();
+        devices = new ArrayList<Device>();
+        connections = new ArrayList<Connection>();
+        calls = new ArrayList<Call>();
     }
 
     /**
@@ -117,7 +119,98 @@ public class Provider {
         }
     }
 
+    public void addDevice(Device d) {
+        if(findDeviceById(d.getDeviceId()) == null) {
+            devices.add(d);
+            Log.d(TAG, "Added new device: " + d.toString());
+        } else {
+            Log.w(TAG, "Duplicate deviceId " + d.getDeviceId() + " not adding device.");
+        }
+    }
+
+    public void removeDevice(Device d) {
+        if(findDeviceById(d.getDeviceId()) != null) {
+            devices.remove(d);
+        }
+    }
+
+    public Device findDeviceById(String deviceId) {
+        if(devices.stream().filter(d -> d.getDeviceId().equals(deviceId)).count() > 0) {
+            return devices.stream().filter(d -> d.getDeviceId().equals(deviceId)).findFirst().get();
+        } else {
+            return null;
+        }
+    }
+
+    public void setDeviceState(String deviceId, DeviceState state) {
+        Device d = findDeviceById(deviceId);
+        if(d != null) {
+            setDeviceState(d, state);
+        }
+    }
+
+    public DeviceState getDeviceState(String deviceId) {
+        Device d = findDeviceById(deviceId);
+        if(d != null) {
+            return getDeviceState(d);
+        }
+        return null;
+    }
+
+    public List<Device> getDevices() {
+        return devices;
+    }
+
+    public void outOfService(Device d) {
+        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(d.getDeviceId());
+        for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
+            OutOfServiceEvent e = new OutOfServiceEvent(
+                    p.getValue().getCrossReferenceId(),
+                    new DeviceId(d.getDeviceId())
+            );
+            String body = CSTAXmlEncoder.getInstance().toXmlString(e);
+            CSTATcpMessage msg = new CSTATcpMessage(CSTATcpMessage.EVENT_INVOKE_ID, body);
+            Log.d(TAG, "Sending Event to Client (" + p.getKey().getClientChannel() + "): " + body);
+            p.getKey().getClientChannel().write(msg);
+            p.getKey().getClientChannel().flush();
+        }
+    }
+
+
+    public void backInService(Device d) {
+        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(d.getDeviceId());
+        for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
+            BackInServiceEvent e = new BackInServiceEvent(
+                    p.getValue().getCrossReferenceId(),
+                    new DeviceId(d.getDeviceId())
+            );
+            String body = CSTAXmlEncoder.getInstance().toXmlString(e);
+            CSTATcpMessage msg = new CSTATcpMessage(CSTATcpMessage.EVENT_INVOKE_ID, body);
+            Log.d(TAG, "Sending Event to Client (" + p.getKey().getClientChannel() + "): " + body);
+            p.getKey().getClientChannel().write(msg);
+            p.getKey().getClientChannel().flush();
+        }
+    }
+
+    public DeviceState getDeviceState(Device device) {
+        return device.getState();
+    }
+
+    public void setDeviceState(Device d, DeviceState state) {
+        d.setState(state);
+    }
+
     public CSTASessionManager getSessionManager() {
         return sessionManager;
+    }
+
+    public Map<CSTASession, MonitorPoint> getMonitorPointsForDevice(String deviceId) {
+        Map<CSTASession, MonitorPoint> points = new HashMap<>();
+
+        sessionManager.getSessions().stream().filter(s -> s.getMonitorPointForDevice(deviceId) != null).forEach(
+                s -> points.put(s, s.getMonitorPointForDevice(deviceId))
+        );
+
+        return points;
     }
 }

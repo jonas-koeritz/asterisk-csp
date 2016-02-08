@@ -4,9 +4,12 @@ import io.netty.channel.Channel;
 import opencsp.Log;
 import opencsp.csta.CSTASessionManager;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.*;
+import java.util.stream.Stream;
 
 public class CSTASession {
     private static final String TAG = "CSTASession";
@@ -17,6 +20,9 @@ public class CSTASession {
     private ProtocolVersion protocolVersion;
     private int sessionDuration;
     private Channel clientChannel;
+
+
+    private List<MonitorPoint> monitorPoints;
 
     ScheduledExecutorService timeoutExecutor;
     private Timer timeoutWarningTimer;
@@ -31,6 +37,7 @@ public class CSTASession {
         this.clientChannel = sourceChannel;
 
         this.timeoutExecutor = Executors.newScheduledThreadPool(2);
+        this.monitorPoints = new ArrayList<MonitorPoint>();
         scheduleTimeout();
     }
 
@@ -73,6 +80,15 @@ public class CSTASession {
     public void cancelSessionTimeouts() {
         timeoutTimer.cancel();
         timeoutWarningTimer.cancel();
+    }
+
+    public MonitorPoint getMonitorPointForDevice(String deviceId) {
+        Stream<MonitorPoint> points = monitorPoints.stream().filter(m -> m.getMonitoredDevice().getDeviceId().equals(deviceId));
+        if(points.count() > 0) {
+            return points.findFirst().get();
+        } else {
+            return null;
+        }
     }
 
     public Channel getClientChannel() {

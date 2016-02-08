@@ -12,4 +12,12 @@ public class MonitorPoint {
         this.crossReferenceId = crossReferenceId;
         this.monitoredDevice = monitoredDevice;
     }
+
+    public Device getMonitoredDevice() {
+        return monitoredDevice;
+    }
+
+    public CrossReferenceId getCrossReferenceId() {
+        return crossReferenceId;
+    }
 }
