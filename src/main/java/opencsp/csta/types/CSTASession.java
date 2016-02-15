@@ -106,6 +106,7 @@ public class CSTASession {
 
     public void removeMonitorPoint(MonitorPoint m) {
         monitorPoints.remove(m);
+        Log.d(TAG, "Removed Monitor Point in Session " + sessionId + ": " + m.toString());
     }
 
     public MonitorPoint getMonitorPointForDevice(String deviceId) {

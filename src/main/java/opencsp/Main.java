@@ -17,6 +17,7 @@ public class Main {
 
         try {
             Asterisk asterisk = new Asterisk("192.168.55.75", "cti", "cti", cstaServiceProvider);
+            cstaServiceProvider.setAsterisk(asterisk);
         } catch (Exception ex) {
             Log.e(TAG, ex.getMessage());
             return;

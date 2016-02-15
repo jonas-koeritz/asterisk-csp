@@ -2,6 +2,7 @@ package opencsp.csta;
 
 import io.netty.channel.Channel;
 import opencsp.Log;
+import opencsp.asterisk.Asterisk;
 import opencsp.csta.messages.*;
 import opencsp.csta.types.*;
 import opencsp.csta.xml.CSTAXmlEncoder;
@@ -29,6 +30,12 @@ public class Provider {
     private int lastCstaSessionId = 0;
 
     private static Provider instance;
+
+    private Asterisk asteriskServer;
+
+    public void setAsterisk(Asterisk asterisk) {
+        this.asteriskServer = asterisk;
+    }
 
     private Provider(String countryCode, String areaCode, String systemPrefix) {
         this.countryCode = countryCode;
@@ -149,6 +156,10 @@ public class Provider {
                 SnapshotDevice mSnapshot = (SnapshotDevice)message;
                 response = snapshotDevice(mSnapshot, session);
                 break;
+            case "GetDoNotDisturb":
+                GetDoNotDisturb mGetDnD = (GetDoNotDisturb)message;
+                response = getDoNotDisturb(mGetDnD);
+                break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
                 break;
@@ -165,6 +176,15 @@ public class Provider {
             Log.i(TAG, "Closing connection to Client (" + clientChannel.remoteAddress().toString() + ")");
             clientChannel.close();
         }
+    }
+
+    private GetDoNotDisturbResponse getDoNotDisturb(GetDoNotDisturb getdnd) {
+        /*
+        if(asteriskServer != null) {
+            asteriskServer
+        }
+        */
+        return null;
     }
 
     private GetPhysicalDeviceInformationResponse getPhysicalDeviceInformation(DeviceId deviceId) {

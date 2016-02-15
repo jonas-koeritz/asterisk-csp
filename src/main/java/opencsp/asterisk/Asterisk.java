@@ -8,12 +8,15 @@ import opencsp.csta.types.DeviceState;
 import opencsp.devices.SIPPhone;
 import org.apache.commons.io.IOExceptionWithCause;
 import org.asteriskjava.manager.*;
+import org.asteriskjava.manager.action.DbGetAction;
 import org.asteriskjava.manager.action.ManagerAction;
 import org.asteriskjava.manager.action.SipPeersAction;
 import org.asteriskjava.manager.action.SipShowPeerAction;
+import org.asteriskjava.manager.event.DbGetResponseEvent;
 import org.asteriskjava.manager.event.ManagerEvent;
 import org.asteriskjava.manager.event.PeerEntryEvent;
 import org.asteriskjava.manager.event.PeerStatusEvent;
+import org.asteriskjava.manager.response.ManagerResponse;
 
 public class Asterisk implements ManagerEventListener {
     private static final String TAG = "Asterisk";
@@ -91,8 +94,22 @@ public class Asterisk implements ManagerEventListener {
         managerConnection.logoff();
     }
 
+    public void trySendAction(ManagerAction action, SendActionCallback callback) {
+        new Thread( new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Log.d(TAG, "Sending Action: " + action.toString());
+                    managerConnection.sendAction(action, callback);
 
-    private void trySendAction(ManagerAction action) {
+                } catch (Exception ex) {
+                    Log.e(TAG, ex.getMessage());
+                }
+            }
+        }).start();
+    }
+
+    public void trySendAction(ManagerAction action) {
         new Thread( new Runnable() {
             @Override
             public void run() {
