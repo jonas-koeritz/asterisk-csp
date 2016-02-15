@@ -141,6 +141,14 @@ public class Provider {
                 MonitorStart mStart = (MonitorStart)message;
                 response = monitorStart(mStart, session);
                 break;
+            case "MonitorStop":
+                MonitorStop mStop = (MonitorStop)message;
+                response = monitorStop(mStop, session);
+                break;
+            case "SnapshotDevice":
+                SnapshotDevice mSnapshot = (SnapshotDevice)message;
+                response = snapshotDevice(mSnapshot, session);
+                break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
                 break;
@@ -171,8 +179,21 @@ public class Provider {
         Device d = findDeviceById(start.getDeviceId());
         if(d != null) {
             MonitorPoint m = session.createMonitorPoint(d);
-            MonitorStartResponse response = new MonitorStartResponse(m.getCrossReferenceId());
-            return response;
+            return new MonitorStartResponse(m.getCrossReferenceId());
+        }
+        return null;
+    }
+
+    private MonitorStopResponse monitorStop(MonitorStop stop, CSTASession session) {
+        MonitorPoint m = session.findMonitorPointByCrossReferenceId(stop.getMonitorCrossRefID());
+        session.removeMonitorPoint(m);
+        return new MonitorStopResponse();
+    }
+
+    private SnapshotDeviceResponse snapshotDevice(SnapshotDevice snapshotDevice, CSTASession session) {
+        MonitorPoint m = session.getMonitorPointForDevice(snapshotDevice.getSnapshotObject());
+        if(m != null) {
+            return new SnapshotDeviceResponse(m.getCrossReferenceId());
         }
         return null;
     }

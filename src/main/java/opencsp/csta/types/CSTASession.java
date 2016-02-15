@@ -92,10 +92,25 @@ public class CSTASession {
         timeoutWarningTimer.cancel();
     }
 
+    public MonitorPoint getMonitorPointForDevice(DeviceId deviceId) {
+        return getMonitorPointForDevice(deviceId.toString());
+    }
+
+    public MonitorPoint findMonitorPointByCrossReferenceId(CrossReferenceId id) {
+        if(monitorPoints.stream().filter(m -> m.getCrossReferenceId().equals(id)).count() > 0) {
+            return monitorPoints.stream().filter(m -> m.getCrossReferenceId().equals(id)).findFirst().get();
+        } else {
+            return null;
+        }
+    }
+
+    public void removeMonitorPoint(MonitorPoint m) {
+        monitorPoints.remove(m);
+    }
+
     public MonitorPoint getMonitorPointForDevice(String deviceId) {
-        Stream<MonitorPoint> points = monitorPoints.stream().filter(m -> m.getMonitoredDevice().getDeviceId().equals(deviceId));
-        if(points.count() > 0) {
-            return points.findFirst().get();
+        if(monitorPoints.stream().filter(m -> m.getMonitoredDevice().getDeviceId().equals(deviceId)).count() > 0) {
+            return monitorPoints.stream().filter(m -> m.getMonitoredDevice().getDeviceId().equals(deviceId)).findFirst().get();
         } else {
             return null;
         }

@@ -26,4 +26,14 @@ public class CrossReferenceId implements CSTAXmlSerializable {
     public Element toXmlElement(Document doc) {
         return toXmlElement(doc, "monitorCrossRefID");
     }
+
+    @Override
+    public boolean equals(Object other) {
+        return ((CrossReferenceId)other).crossReferenceId == crossReferenceId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(crossReferenceId);
+    }
 }
