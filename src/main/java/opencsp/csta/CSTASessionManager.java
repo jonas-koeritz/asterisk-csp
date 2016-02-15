@@ -1,5 +1,6 @@
 package opencsp.csta;
 
+import io.netty.channel.Channel;
 import opencsp.Log;
 import opencsp.csta.messages.ResetApplicationSessionTimerPosResponse;
 import opencsp.csta.messages.StopApplicationSessionPosResponse;
@@ -45,6 +46,14 @@ public class CSTASessionManager implements CSTASession.OnSessionTimeoutHandler {
     public CSTASession getSessionById(int sessionId) {
         if(sessions.stream().filter(s -> s.getSessionId() == sessionId).count() > 0) {
             return sessions.stream().filter(s -> s.getSessionId() == sessionId).findFirst().get();
+        } else {
+            return null;
+        }
+    }
+
+    public CSTASession findSessionForChannel(Channel channel) {
+        if(sessions.stream().filter(s -> s.getClientChannel().equals(channel)).count() > 0) {
+            return sessions.stream().filter(s -> s.getClientChannel().equals(channel)).findFirst().get();
         } else {
             return null;
         }

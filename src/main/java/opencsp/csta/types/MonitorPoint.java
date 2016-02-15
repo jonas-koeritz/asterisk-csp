@@ -20,4 +20,8 @@ public class MonitorPoint {
     public CrossReferenceId getCrossReferenceId() {
         return crossReferenceId;
     }
+
+    public String toString() {
+        return "[MonitorPoint: crossReferenceId=" + crossReferenceId + ", monitoredDevice=" + monitoredDevice.getDeviceId().toString() + "]";
+    }
 }

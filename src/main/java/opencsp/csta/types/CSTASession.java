@@ -3,6 +3,7 @@ package opencsp.csta.types;
 import io.netty.channel.Channel;
 import opencsp.Log;
 import opencsp.csta.CSTASessionManager;
+import opencsp.csta.messages.MonitorStart;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,8 @@ public class CSTASession {
 
     public OnSessionTimeoutHandler timeoutHandler;
 
+    private int lastCrossReferenceId = 0;
+
     public CSTASession(int sessionId, ProtocolVersion protocolVersion, int sessionDuration, Channel sourceChannel) {
         this.sessionId = sessionId;
         this.protocolVersion = protocolVersion;
@@ -39,6 +42,13 @@ public class CSTASession {
         this.timeoutExecutor = Executors.newScheduledThreadPool(2);
         this.monitorPoints = new ArrayList<MonitorPoint>();
         scheduleTimeout();
+    }
+
+    public MonitorPoint createMonitorPoint(Device device) {
+        MonitorPoint m = new MonitorPoint(new CrossReferenceId(lastCrossReferenceId++), device);
+        monitorPoints.add(m);
+        Log.d(TAG, "Created new MonitorPoint in session " + sessionId + ": " + m.toString());
+        return m;
     }
 
     public int getSessionId() {

@@ -118,6 +118,8 @@ public class Provider {
         CSTAXmlSerializable response = null;
         boolean disconnectClient = false;
 
+        CSTASession session = sessionManager.findSessionForChannel(clientChannel);
+
         switch(message.getClass().getSimpleName()) {
             case "StartApplicationSession":
                 response = startSession((StartApplicationSession)message, clientChannel);
@@ -134,6 +136,10 @@ public class Provider {
             case "GetPhysicalDeviceInformation":
                 GetPhysicalDeviceInformation getPhysicalDeviceInformation = (GetPhysicalDeviceInformation)message;
                 response = getPhysicalDeviceInformation(getPhysicalDeviceInformation.getDevice());
+                break;
+            case "MonitorStart":
+                MonitorStart mStart = (MonitorStart)message;
+                response = monitorStart(mStart, session);
                 break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
@@ -161,6 +167,16 @@ public class Provider {
         return null;
     }
 
+    private MonitorStartResponse monitorStart(MonitorStart start, CSTASession session) {
+        Device d = findDeviceById(start.getDeviceId());
+        if(d != null) {
+            MonitorPoint m = session.createMonitorPoint(d);
+            MonitorStartResponse response = new MonitorStartResponse(m.getCrossReferenceId());
+            return response;
+        }
+        return null;
+    }
+
     public void addDevice(Device d) {
         if(findDeviceById(d.getDeviceId()) == null) {
             devices.add(d);
@@ -174,6 +190,10 @@ public class Provider {
         if(findDeviceById(d.getDeviceId()) != null) {
             devices.remove(d);
         }
+    }
+
+    public Device findDeviceById(DeviceId deviceId) {
+        return findDeviceById(deviceId.toString());
     }
 
     public Device findDeviceById(String deviceId) {
