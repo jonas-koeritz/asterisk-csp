@@ -22,15 +22,45 @@ public class Provider {
     private List<Call> calls;
     private CSTASessionManager sessionManager;
 
+    private String countryCode;
+    private String areaCode;
+    private String systemPrefix;
 
     private int lastCstaSessionId = 0;
 
-    public Provider() {
+    private static Provider instance;
 
+    private Provider(String countryCode, String areaCode, String systemPrefix) {
+        this.countryCode = countryCode;
+        this.areaCode = areaCode;
+        this.systemPrefix = systemPrefix;
         sessionManager = new CSTASessionManager();
         devices = new ArrayList<Device>();
         connections = new ArrayList<Connection>();
         calls = new ArrayList<Call>();
+    }
+
+    public static Provider getInstance(String countryCode, String areaCode, String systemPrefix) {
+        if(instance == null) {
+            instance = new Provider(countryCode, areaCode, systemPrefix);
+        }
+        return instance;
+    }
+
+    public static Provider getExistingInstance() {
+        return instance;
+    }
+
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    public String getAreaCode() {
+        return areaCode;
+    }
+
+    public String getSystemPrefix() {
+        return systemPrefix;
     }
 
     /**
@@ -101,6 +131,10 @@ public class Provider {
                 response = sessionManager.removeSession(sessionManager.getSessionById(stop.getSessionID()));
                 disconnectClient = true;
                 break;
+            case "GetPhysicalDeviceInformation":
+                GetPhysicalDeviceInformation getPhysicalDeviceInformation = (GetPhysicalDeviceInformation)message;
+                response = getPhysicalDeviceInformation(getPhysicalDeviceInformation.getDevice());
+                break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
                 break;
@@ -117,6 +151,14 @@ public class Provider {
             Log.i(TAG, "Closing connection to Client (" + clientChannel.remoteAddress().toString() + ")");
             clientChannel.close();
         }
+    }
+
+    private GetPhysicalDeviceInformationResponse getPhysicalDeviceInformation(DeviceId deviceId) {
+        Device d = findDeviceById(deviceId.toString());
+        if(d != null) {
+            return new GetPhysicalDeviceInformationResponse(d);
+        }
+        return null;
     }
 
     public void addDevice(Device d) {

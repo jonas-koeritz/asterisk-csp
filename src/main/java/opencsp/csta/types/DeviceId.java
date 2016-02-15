@@ -22,4 +22,8 @@ public class DeviceId implements CSTAXmlSerializable {
         e.appendChild(deviceId);
         return e;
     }
+
+    public String toString() {
+        return deviceIdentifier;
+    }
 }

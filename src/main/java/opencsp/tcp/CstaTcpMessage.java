@@ -8,6 +8,7 @@ import java.nio.charset.Charset;
 
 public class CSTATcpMessage {
     private static final String TAG = "CSTATcpMessage";
+    public static final int EVENT_INVOKE_ID = 9999;
 
     private int invokeId;
     private int length;

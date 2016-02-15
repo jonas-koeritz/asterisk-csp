@@ -10,7 +10,7 @@ public class Main {
     private static final String TAG = "AsteriskCSP";
 
     public static void main(String[] args) {
-        Provider cstaServiceProvider = new Provider();
+        Provider cstaServiceProvider = Provider.getInstance("49", "4121", "2336");
 
         Wbm wbm = new Wbm(8080, cstaServiceProvider);
         wbm.start();
