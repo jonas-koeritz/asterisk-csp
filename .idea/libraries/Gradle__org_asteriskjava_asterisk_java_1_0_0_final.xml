@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.asteriskjava:asterisk-java:1.0.0-final">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.asteriskjava/asterisk-java/1.0.0-final/88eabbe2a05dc21f012292ed387dc0cdafc00a3d/asterisk-java-1.0.0-final.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.asteriskjava/asterisk-java/1.0.0-final/71a06f5cc98f8ead0a7058cc55b785c0becc607d/asterisk-java-1.0.0-final-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

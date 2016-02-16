@@ -5,22 +5,21 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 public class Connection implements CSTAXmlSerializable {
-    String callId;
+    int callId;
     DeviceId deviceId;
+    String uniqueId;
 
-    public Connection(String callId, DeviceId deviceId) {
+    public Connection(int callId, DeviceId deviceId, String uniqueId) {
         this.callId = callId;
         this.deviceId = deviceId;
+        this.uniqueId = uniqueId;
     }
 
-    public Connection(String callId) {
-        this(callId, null);
-    }
 
     public Element toXmlElement(Document doc, String tagName) {
         Element e = doc.createElement(tagName);
         Element cid = doc.createElement("callID");
-        cid.setTextContent(this.callId);
+        cid.setTextContent(Integer.toString(this.callId));
         e.appendChild(cid);
         if(deviceId != null) {
             e.appendChild(deviceId.toXmlElement(doc, "deviceID"));
@@ -28,7 +27,11 @@ public class Connection implements CSTAXmlSerializable {
         return e;
     }
 
-    public String getCallId() {
+    public int getCallId() {
         return callId;
+    }
+
+    public String toString() {
+        return "[Connection: deviceId=" + deviceId.toString() + ", callId=" + callId + ", uniqueId=" + uniqueId + "]";
     }
 }

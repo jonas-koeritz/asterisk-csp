@@ -3,13 +3,13 @@ package opencsp.csta.types;
 import java.util.List;
 
 public class Call {
-    private String callId;
+    private int callId;
 
-    public String getCallId() {
+    public int getCallId() {
         return callId;
     }
 
-    public Call(String callId) {
+    public Call(int callId) {
         this.callId = callId;
     }
 }

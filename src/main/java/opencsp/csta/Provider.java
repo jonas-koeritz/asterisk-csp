@@ -28,6 +28,7 @@ public class Provider {
     private String systemPrefix;
 
     private int lastCstaSessionId = 0;
+    private int lastCallId = 0;
 
     private static Provider instance;
 
@@ -84,10 +85,10 @@ public class Provider {
      * @param callId the CallID to search for
      * @return List of Connections participating in the call
      */
-    public List<Connection> getConnectionsByCallId(String callId) {
+    public List<Connection> getConnectionsByCallId(int callId) {
         return connections
                 .stream()
-                .filter(c -> c.getCallId().equals(callId))
+                .filter(c -> c.getCallId() == callId)
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
@@ -96,9 +97,9 @@ public class Provider {
      * @param callId The callID to search for
      * @return The Call Object or null if no Call Object with the fiven callID was found
      */
-    public Call getCallByCallId(String callId) {
+    public Call getCallByCallId(int callId) {
         return calls.stream()
-                .filter(c -> c.getCallId().equals(callId))
+                .filter(c -> c.getCallId() == callId)
                 .findFirst().get();
     }
 
@@ -367,5 +368,11 @@ public class Provider {
         );
 
         return points;
+    }
+
+    public void newConnection(DeviceId deviceId, String uniqueId) {
+        Connection c = new Connection(lastCallId++, deviceId, uniqueId);
+        Log.d(TAG, "Created new connection: " + c.toString());
+        connections.add(c);
     }
 }

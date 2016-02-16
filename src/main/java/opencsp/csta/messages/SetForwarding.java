@@ -52,7 +52,11 @@ public class SetForwarding extends CSTARequest implements CSTAXmlSerializable {
 
                 forwardingType = Forwarding.ForwardingType.getEnum(xml.getElementsByTagName("forwardingType").item(0).getTextContent());
                 activate = Boolean.parseBoolean(xml.getElementsByTagName("activateForward").item(0).getTextContent());
-                dn = xml.getElementsByTagName("forwardDN").item(0).getTextContent();
+                if(xml.getElementsByTagName("forwardDN").getLength() > 0) {
+                    dn = xml.getElementsByTagName("forwardDN").item(0).getTextContent();
+                } else {
+                    dn = "";
+                }
             } else {
                 Log.w(TAG, "Could no handle request, no existing provider");
             }

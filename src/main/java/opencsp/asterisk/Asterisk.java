@@ -2,18 +2,17 @@ package opencsp.asterisk;
 
 import opencsp.Log;
 import opencsp.csta.Provider;
-import opencsp.csta.types.Device;
-import opencsp.csta.types.DeviceCategory;
-import opencsp.csta.types.DeviceState;
+import opencsp.csta.types.*;
 import opencsp.devices.SIPPhone;
 import org.apache.commons.io.IOExceptionWithCause;
-import org.asteriskjava.live.AsteriskServer;
-import org.asteriskjava.live.DefaultAsteriskServer;
+import org.asteriskjava.live.*;
 import org.asteriskjava.manager.*;
 import org.asteriskjava.manager.action.*;
 import org.asteriskjava.manager.event.*;
 import org.asteriskjava.manager.response.ManagerResponse;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +31,7 @@ public class Asterisk implements ManagerEventListener {
     private List<PendingEventHandler> pendingEventHandlers;
     private int lastPendingActionId = 0;
 
+
     public Asterisk(String asteriskServer, String amiUser, String amiPassword, Provider provider) throws AuthenticationFailedException, TimeoutException, java.io.IOException {
         this.provider = provider;
         this.asteriskServer = asteriskServer;
@@ -47,6 +47,8 @@ public class Asterisk implements ManagerEventListener {
         managerConnection.addEventListener(this);
 
         trySendAction(new SipPeersAction());
+
+
     }
 
 
@@ -97,9 +99,23 @@ public class Asterisk implements ManagerEventListener {
                     d.setState(DeviceState.Unavailable);
                 }
                 break;
+            case "NewStateEvent":
+                break;
+            case "DialEvent":
+                DialEvent dialEvent = (DialEvent)event;
+
+                break;
+            case "NewChannelEvent":
+                NewChannelEvent newChannelEvent = (NewChannelEvent)event;
+                provider.newConnection(channelToDeviceId(newChannelEvent.getChannel()), newChannelEvent.getUniqueId());
             default:
                 break;
         }
+    }
+
+    private DeviceId channelToDeviceId(String channel) {
+        String withoutTechnology = (channel.split("/")[channel.split("/").length - 1]);
+        return new DeviceId(withoutTechnology.split("-")[0]);
     }
 
     private String peerToDeviceId(String peer) {
