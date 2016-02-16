@@ -1,10 +1,11 @@
 package opencsp.csta.messages;
 
 import opencsp.csta.types.*;
+import opencsp.csta.xml.CSTAXmlSerializable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-public class DeliveredEvent extends CSTAEvent {
+public class DeliveredEvent extends CSTAEvent implements CSTAXmlSerializable {
     CrossReferenceId monitorCrossRefID;
 
     Connection connection;

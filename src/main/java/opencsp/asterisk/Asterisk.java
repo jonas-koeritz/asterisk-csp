@@ -10,10 +10,7 @@ import org.apache.commons.io.IOExceptionWithCause;
 import org.asteriskjava.live.AsteriskServer;
 import org.asteriskjava.live.DefaultAsteriskServer;
 import org.asteriskjava.manager.*;
-import org.asteriskjava.manager.action.DbGetAction;
-import org.asteriskjava.manager.action.ManagerAction;
-import org.asteriskjava.manager.action.SipPeersAction;
-import org.asteriskjava.manager.action.SipShowPeerAction;
+import org.asteriskjava.manager.action.*;
 import org.asteriskjava.manager.event.*;
 import org.asteriskjava.manager.response.ManagerResponse;
 
@@ -113,6 +110,10 @@ public class Asterisk implements ManagerEventListener {
         managerConnection.logoff();
     }
 
+    public void putAsteriskDatabaseValue(String family, String key, String value) {
+        DbPutAction action = new DbPutAction(family, key, value);
+        trySendAction(action);
+    }
 
     public void retrieveAsteriskDatabaseValue(String family, String key, OnAsteriskDatabaseValueRetrieved handler) {
         DbGetAction action = new DbGetAction(family, key);
@@ -122,7 +123,7 @@ public class Asterisk implements ManagerEventListener {
             @Override
             public void onEvent(ResponseEvent event) {
                 DbGetResponseEvent r = (DbGetResponseEvent)event;
-                handler.onValueRetrieved(r.getVal());
+                handler.onValueRetrieved(r.getVal() != null ? r.getVal() : "");
             }
         });
         trySendAction(action);

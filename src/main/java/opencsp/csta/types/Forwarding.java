@@ -42,6 +42,16 @@ public class Forwarding implements CSTAXmlSerializable {
             return this.type;
         }
 
+
+        public static ForwardingType getEnum(String value) {
+            for(ForwardingType t : values()) {
+                if(t.toString().equals(value)) {
+                    return t;
+                }
+            }
+            return ForwardingType.Immediate;
+        }
+
         public Element toXmlElement(Document doc, String tagName) {
             Element e = doc.createElement(tagName);
             e.setTextContent(type);

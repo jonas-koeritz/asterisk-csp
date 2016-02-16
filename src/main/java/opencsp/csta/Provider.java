@@ -159,8 +159,14 @@ public class Provider {
             case "GetDoNotDisturb":
                 getDoNotDisturb((GetDoNotDisturb)message, invokeId, clientChannel);
                 break;
+            case "SetDoNotDisturb":
+                setDoNotDisturb((SetDoNotDisturb)message, invokeId, session);
+                break;
             case "GetForwarding":
                 getForwarding((GetForwarding)message, invokeId, clientChannel);
+                break;
+            case "SetForwarding":
+                setForwarding((SetForwarding)message, invokeId, session);
                 break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
@@ -177,10 +183,43 @@ public class Provider {
         }
     }
 
+    private void setForwarding(SetForwarding setfwd, int invokeId, CSTASession session) {
+        asteriskServer.putAsteriskDatabaseValue(setfwd.getDevice().toString(), setfwd.getForwardingType().toString(), setfwd.getActivate() ? setfwd.getDN() : "");
+        sendResponseToClient(session.getClientChannel(), invokeId, new SetForwardingResponse());
+        MonitorPoint mp = session.getMonitorPointForDevice(setfwd.getDevice().toString());
+        if(mp != null) {
+            ForwardingEvent event = new ForwardingEvent(
+                    mp.getCrossReferenceId(),
+                    setfwd.getDevice(),
+                    setfwd.getForwardingType(),
+                    setfwd.getDN(),
+                    setfwd.getActivate()
+            );
+            sendEventToClient(session.getClientChannel(), event);
+        }
+    }
+
+    private void setDoNotDisturb(SetDoNotDisturb setdnd, int invokeId, CSTASession session) {
+        asteriskServer.putAsteriskDatabaseValue(setdnd.getDevice().toString(), "dnd", Boolean.toString(setdnd.getOn()));
+        sendResponseToClient(session.getClientChannel(), invokeId, new SetDoNotDisturbResponse());
+        MonitorPoint mp = session.getMonitorPointForDevice(setdnd.getDevice().toString());
+        if(mp != null) {
+            DoNotDisturbEvent event = new DoNotDisturbEvent(mp.getCrossReferenceId(), setdnd.getDevice(), setdnd.getOn());
+            sendEventToClient(session.getClientChannel(), event);
+        }
+    }
+
     private void sendResponseToClient(Channel clientChannel, int invokeId, CSTAXmlSerializable response) {
         CSTATcpMessage tcpResponse = new CSTATcpMessage(invokeId, CSTAXmlEncoder.getInstance().toXmlString(response));
         Log.d(TAG, "Sending Response to Client (" + clientChannel.remoteAddress().toString() + "):\n" + tcpResponse.getBody());
         clientChannel.write(tcpResponse.toByteBuf());
+        clientChannel.flush();
+    }
+
+    private void sendEventToClient(Channel clientChannel, CSTAXmlSerializable event) {
+        CSTATcpMessage tcpEvent = new CSTATcpMessage(CSTATcpMessage.EVENT_INVOKE_ID, CSTAXmlEncoder.getInstance().toXmlString(event));
+        Log.d(TAG, "Sending Event to Client (" + clientChannel.remoteAddress().toString() + "):\n" + tcpEvent.getBody());
+        clientChannel.write(tcpEvent.toByteBuf());
         clientChannel.flush();
     }
 
@@ -292,11 +331,7 @@ public class Provider {
                     p.getValue().getCrossReferenceId(),
                     new DeviceId(d.getDeviceId())
             );
-            String body = CSTAXmlEncoder.getInstance().toXmlString(e);
-            CSTATcpMessage msg = new CSTATcpMessage(CSTATcpMessage.EVENT_INVOKE_ID, body);
-            Log.d(TAG, "Sending Event to Client (" + p.getKey().getClientChannel() + "): " + body);
-            p.getKey().getClientChannel().write(msg);
-            p.getKey().getClientChannel().flush();
+            sendEventToClient(p.getKey().getClientChannel(), e);
         }
     }
 
@@ -308,11 +343,7 @@ public class Provider {
                     p.getValue().getCrossReferenceId(),
                     new DeviceId(d.getDeviceId())
             );
-            String body = CSTAXmlEncoder.getInstance().toXmlString(e);
-            CSTATcpMessage msg = new CSTATcpMessage(CSTATcpMessage.EVENT_INVOKE_ID, body);
-            Log.d(TAG, "Sending Event to Client (" + p.getKey().getClientChannel() + "): " + body);
-            p.getKey().getClientChannel().write(msg);
-            p.getKey().getClientChannel().flush();
+            sendEventToClient(p.getKey().getClientChannel(), e);
         }
     }
 
