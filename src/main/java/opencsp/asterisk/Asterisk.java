@@ -7,16 +7,18 @@ import opencsp.csta.types.DeviceCategory;
 import opencsp.csta.types.DeviceState;
 import opencsp.devices.SIPPhone;
 import org.apache.commons.io.IOExceptionWithCause;
+import org.asteriskjava.live.AsteriskServer;
+import org.asteriskjava.live.DefaultAsteriskServer;
 import org.asteriskjava.manager.*;
 import org.asteriskjava.manager.action.DbGetAction;
 import org.asteriskjava.manager.action.ManagerAction;
 import org.asteriskjava.manager.action.SipPeersAction;
 import org.asteriskjava.manager.action.SipShowPeerAction;
-import org.asteriskjava.manager.event.DbGetResponseEvent;
-import org.asteriskjava.manager.event.ManagerEvent;
-import org.asteriskjava.manager.event.PeerEntryEvent;
-import org.asteriskjava.manager.event.PeerStatusEvent;
+import org.asteriskjava.manager.event.*;
 import org.asteriskjava.manager.response.ManagerResponse;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Asterisk implements ManagerEventListener {
     private static final String TAG = "Asterisk";
@@ -28,6 +30,10 @@ public class Asterisk implements ManagerEventListener {
     private Provider provider;
 
     private ManagerConnection managerConnection;
+    private AsteriskServer asterisk;
+
+    private List<PendingEventHandler> pendingEventHandlers;
+    private int lastPendingActionId = 0;
 
     public Asterisk(String asteriskServer, String amiUser, String amiPassword, Provider provider) throws AuthenticationFailedException, TimeoutException, java.io.IOException {
         this.provider = provider;
@@ -35,7 +41,10 @@ public class Asterisk implements ManagerEventListener {
         this.amiUser = amiUser;
         this.amiPassword = amiPassword;
 
-        managerConnection = (new ManagerConnectionFactory(asteriskServer, amiUser, amiPassword)).createManagerConnection();
+        pendingEventHandlers = new ArrayList<PendingEventHandler>();
+
+        asterisk = new DefaultAsteriskServer(asteriskServer, amiUser, amiPassword);
+        managerConnection = asterisk.getManagerConnection();
 
         managerConnection.login();
         managerConnection.addEventListener(this);
@@ -43,10 +52,20 @@ public class Asterisk implements ManagerEventListener {
         trySendAction(new SipPeersAction());
     }
 
+
     public void onManagerEvent(ManagerEvent event) {
         Log.d(TAG, "Event: " + event.toString());
 
-        switch(event.getClass().getSimpleName()) {
+        String eventClass = event.getClass().getSimpleName();
+
+        //Run all pending event handlers
+        if(event instanceof ResponseEvent) {
+            ResponseEvent response = (ResponseEvent)event;
+            pendingEventHandlers.stream().filter(h -> h.getActionId().equals(response.getActionId())).forEach(h -> h.onEvent(response));
+            pendingEventHandlers.stream().filter(h -> h.getActionId().equals(response.getActionId())).forEach(h -> pendingEventHandlers.remove(h));
+        }
+
+        switch(eventClass) {
             case "PeerEntryEvent":
                 PeerEntryEvent peerEntryEvent = (PeerEntryEvent)event;
                 if(peerEntryEvent.getDynamic()) {
@@ -94,14 +113,32 @@ public class Asterisk implements ManagerEventListener {
         managerConnection.logoff();
     }
 
+
+    public void retrieveAsteriskDatabaseValue(String family, String key, OnAsteriskDatabaseValueRetrieved handler) {
+        DbGetAction action = new DbGetAction(family, key);
+        String actionId = "pending-" + lastPendingActionId++;
+        action.setActionId(actionId);
+        pendingEventHandlers.add(new PendingEventHandler(actionId) {
+            @Override
+            public void onEvent(ResponseEvent event) {
+                DbGetResponseEvent r = (DbGetResponseEvent)event;
+                handler.onValueRetrieved(r.getVal());
+            }
+        });
+        trySendAction(action);
+    }
+
     public void trySendAction(ManagerAction action, SendActionCallback callback) {
-        new Thread( new Runnable() {
+        new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     Log.d(TAG, "Sending Action: " + action.toString());
-                    managerConnection.sendAction(action, callback);
-
+                    if(callback != null) {
+                        managerConnection.sendAction(action, callback);
+                    } else {
+                        managerConnection.sendAction(action);
+                    }
                 } catch (Exception ex) {
                     Log.e(TAG, ex.getMessage());
                 }
@@ -109,18 +146,27 @@ public class Asterisk implements ManagerEventListener {
         }).start();
     }
 
-    public void trySendAction(ManagerAction action) {
-        new Thread( new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Log.d(TAG, "Sending Action: " + action.toString());
-                    managerConnection.sendAction(action);
 
-                } catch (Exception ex) {
-                    Log.e(TAG, ex.getMessage());
-                }
-            }
-        }).start();
+    public void trySendAction(ManagerAction action) {
+        trySendAction(action, null);
+    }
+
+    private static abstract class PendingEventHandler {
+        private String actionId;
+
+        public PendingEventHandler(String actionId) {
+            this.actionId = actionId;
+        }
+
+        public String getActionId() {
+            return actionId;
+        }
+
+        public abstract void onEvent(ResponseEvent event);
+    }
+
+
+    public static abstract class OnAsteriskDatabaseValueRetrieved {
+        public abstract void onValueRetrieved(String value);
     }
 }

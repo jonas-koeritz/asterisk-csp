@@ -20,6 +20,10 @@ public class GetForwarding extends CSTARequest implements CSTAXmlSerializable {
         return e;
     }
 
+    public DeviceId getDevice() {
+        return device;
+    }
+
     public GetForwarding(String xmlBody) {
         Document xml = documentFromXmlString(xmlBody);
         NodeList devices = xml.getElementsByTagName("device");

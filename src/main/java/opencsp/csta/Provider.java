@@ -157,8 +157,10 @@ public class Provider {
                 response = snapshotDevice(mSnapshot, session);
                 break;
             case "GetDoNotDisturb":
-                GetDoNotDisturb mGetDnD = (GetDoNotDisturb)message;
-                response = getDoNotDisturb(mGetDnD);
+                getDoNotDisturb((GetDoNotDisturb)message, invokeId, clientChannel);
+                break;
+            case "GetForwarding":
+                getForwarding((GetForwarding)message, invokeId, clientChannel);
                 break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
@@ -166,10 +168,7 @@ public class Provider {
         }
 
         if(response != null) {
-            CSTATcpMessage tcpResponse = new CSTATcpMessage(invokeId, CSTAXmlEncoder.getInstance().toXmlString(response));
-            Log.d(TAG, "Sending Response to Client (" + clientChannel.remoteAddress().toString() + "):\n" + tcpResponse.getBody());
-            clientChannel.write(tcpResponse.toByteBuf());
-            clientChannel.flush();
+            sendResponseToClient(clientChannel, invokeId, response);
         }
 
         if(disconnectClient) {
@@ -178,13 +177,35 @@ public class Provider {
         }
     }
 
-    private GetDoNotDisturbResponse getDoNotDisturb(GetDoNotDisturb getdnd) {
-        /*
-        if(asteriskServer != null) {
-            asteriskServer
-        }
-        */
-        return null;
+    private void sendResponseToClient(Channel clientChannel, int invokeId, CSTAXmlSerializable response) {
+        CSTATcpMessage tcpResponse = new CSTATcpMessage(invokeId, CSTAXmlEncoder.getInstance().toXmlString(response));
+        Log.d(TAG, "Sending Response to Client (" + clientChannel.remoteAddress().toString() + "):\n" + tcpResponse.getBody());
+        clientChannel.write(tcpResponse.toByteBuf());
+        clientChannel.flush();
+    }
+
+    private void getDoNotDisturb(GetDoNotDisturb getdnd, int invokeId, Channel channel) {
+        asteriskServer.retrieveAsteriskDatabaseValue(getdnd.getDevice().toString(), "dnd", new Asterisk.OnAsteriskDatabaseValueRetrieved() {
+            @Override
+            public void onValueRetrieved(String value) {
+                sendResponseToClient(channel, invokeId, new GetDoNotDisturbResponse(Boolean.parseBoolean(value)));
+            }
+        });
+    }
+
+    private void getForwarding(GetForwarding getfwd, int invokeId, Channel channel) {
+        asteriskServer.retrieveAsteriskDatabaseValue(getfwd.getDevice().toString(), "forwardImmediate", new Asterisk.OnAsteriskDatabaseValueRetrieved() {
+            @Override
+            public void onValueRetrieved(String value) {
+                GetForwardingResponse response = new GetForwardingResponse();
+                response.addForwarding(new Forwarding(
+                        Forwarding.ForwardingType.Immediate,
+                        value.length() > 0,
+                        value
+                ));
+                sendResponseToClient(channel, invokeId, response);
+            }
+        });
     }
 
     private GetPhysicalDeviceInformationResponse getPhysicalDeviceInformation(DeviceId deviceId) {
