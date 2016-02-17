@@ -111,6 +111,10 @@ public class Provider {
         return null;
     }
 
+    public List<Connection> findConnectionsForDevice(Device d) {
+        return connections.stream().filter(c -> c.getDeviceId().toString().equals(d.getDeviceId().toString())).collect(Collectors.toCollection(ArrayList::new));
+    }
+
 
 
     public CSTAXmlSerializable startSession(StartApplicationSession message, Channel clientChannel) {
@@ -433,7 +437,7 @@ public class Provider {
         }
     }
 
-    public void established(Device callingDevice, Device calledDevice, Connection con) {
+    public void established(Device callingDevice, Device calledDevice, Device answeringDevice, Connection con) {
         Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(callingDevice.getDeviceId());
         for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
             CSTASession s = p.getKey();

@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Asterisk implements ManagerEventListener {
     private static final String TAG = "Asterisk";
@@ -149,7 +150,7 @@ public class Asterisk implements ManagerEventListener {
                                 if (call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).count() > 0) {
                                     Connection callee = call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
                                     caller = provider.findDeviceById(channelToDeviceId(newStateEvent.getChannel()));
-                                    provider.established(caller, provider.findDeviceById(callee.getDeviceId()), c);
+                                    provider.established(caller, provider.findDeviceById(callee.getDeviceId()), provider.findDeviceById(callee.getDeviceId()), c);
                                 }
                             }
                             break;
@@ -206,6 +207,7 @@ public class Asterisk implements ManagerEventListener {
             case "NewChannelEvent":
                 NewChannelEvent newChannelEvent = (NewChannelEvent)event;
                 provider.newConnection(channelToDeviceId(newChannelEvent.getChannel()), newChannelEvent.getUniqueId());
+                break;
             case "MasqueradeEvent":
                 MasqueradeEvent masqueradeEvent = (MasqueradeEvent)event;
                 //This is a direct Pick-Up
@@ -214,7 +216,44 @@ public class Asterisk implements ManagerEventListener {
                         ) {
                     Device original = provider.findDeviceById(channelToDeviceId(masqueradeEvent.getOriginal()));
                     Device clone = provider.findDeviceById(channelToDeviceId(masqueradeEvent.getClone()));
+                    List<Connection> originalConnections = provider.findConnectionsForDevice(original);
+                    List<Connection> offeredConnections = originalConnections.stream().filter(origCon -> origCon.getConnectionState() != ConnectionState.Connected).collect(Collectors.toList());
 
+                    List<Connection> cloneConnections = provider.findConnectionsForDevice(clone);
+
+                    if(offeredConnections.size() > 0 && cloneConnections.size() > 0) {
+                        Connection originalConnection = offeredConnections.get(0);
+
+                        Call incomingCall = provider.getCallByCallId(originalConnection.getCallId());
+
+                        Log.d(TAG, "Pick-Up: " + clone + " is picking up " + originalConnection);
+                        provider.connectionCleared(original, original, originalConnection);
+                        incomingCall.getConnections().remove(originalConnection);
+                        provider.removeConnection(originalConnection);
+
+                        Connection cloneConnection = cloneConnections.get(0);
+                        List<Connection> incomingConnections = incomingCall.getConnections();
+
+                        if(incomingConnections.size() > 0) {
+                            //There should only be one connection left in this call
+                            Connection incomingConnection = incomingConnections.get(0);
+                            //Add the picking-up connection to this call
+                            cloneConnection.setCallId(originalConnection.getCallId());
+                            incomingCall.addConnection(cloneConnection);
+
+                            provider.established(
+                                    provider.findDeviceById(incomingConnection.getDeviceId()),
+                                    original,
+                                    clone,
+                                    cloneConnection
+                            );
+                        } else {
+                            Log.e(TAG, "There is no connection left in the call.");
+                        }
+
+                    } else {
+                        Log.w(TAG, "There are no half-open connections to Pick-Up. Or the picking-up device has no connection.");
+                    }
                 }
 
                 break;
