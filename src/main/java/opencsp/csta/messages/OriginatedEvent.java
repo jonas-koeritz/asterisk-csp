@@ -11,7 +11,7 @@ public class OriginatedEvent extends CSTAEvent implements CSTAXmlSerializable {
     DeviceId callingDevice;
     DeviceId calledDevice;
 
-    LocalConnectionState localConnectionInfo = LocalConnectionState.Connected;
+    ConnectionState localConnectionInfo = ConnectionState.Connected;
 
     public OriginatedEvent(CrossReferenceId monitorCrossRefID, Connection originatedConnection, DeviceId callingDevice, DeviceId calledDevice) {
         this(monitorCrossRefID, originatedConnection, callingDevice, calledDevice, EventCause.NewCall);

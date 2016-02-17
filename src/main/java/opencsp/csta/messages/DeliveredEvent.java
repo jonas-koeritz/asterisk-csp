@@ -18,7 +18,7 @@ public class DeliveredEvent extends CSTAEvent implements CSTAXmlSerializable {
 
     DeviceId lastRedirectionDevice;
 
-    LocalConnectionState localConnectionInfo = LocalConnectionState.Connected;
+    ConnectionState localConnectionInfo = ConnectionState.Connected;
 
     public DeliveredEvent(CrossReferenceId monitorCrossRefID, Connection connection, DeviceId alertingDevice, DeviceId callingDevice, DeviceId calledDevice, DeviceId lastRedirectionDevice) {
         this(monitorCrossRefID, connection, alertingDevice, callingDevice, calledDevice, lastRedirectionDevice, EventCause.NewCall);
@@ -44,7 +44,9 @@ public class DeliveredEvent extends CSTAEvent implements CSTAXmlSerializable {
         if(lastRedirectionDevice != null) {
             e.appendChild(lastRedirectionDevice.toXmlElement(doc, "lastRedirectionDevice"));
         } else {
-            e.appendChild(doc.createElement("lastRedirectionDevice").appendChild(doc.createElement("notRequired")));
+            Element lrd = doc.createElement("lastRedirectionDevice");
+            lrd.appendChild(doc.createElement("notRequired"));
+            e.appendChild(lrd);
         }
         e.appendChild(localConnectionInfo.toXmlElement(doc, "localConnectionInfo"));
         e.appendChild(cause.toXmlElement(doc));

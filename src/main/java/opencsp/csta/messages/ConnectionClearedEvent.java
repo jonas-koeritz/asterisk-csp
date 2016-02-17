@@ -12,7 +12,7 @@ public class ConnectionClearedEvent extends CSTAEvent implements CSTAXmlSerializ
 
     DeviceId releasingDevice;
 
-    LocalConnectionState localConnectionInfo = LocalConnectionState.Null;
+    ConnectionState localConnectionInfo = ConnectionState.Null;
 
     public ConnectionClearedEvent(CrossReferenceId monitorCrossRefID, Connection droppedConnection, DeviceId releasingDevice) {
         this(monitorCrossRefID, droppedConnection, releasingDevice, EventCause.NormalClearing);

@@ -8,6 +8,7 @@ public class Connection implements CSTAXmlSerializable {
     int callId;
     DeviceId deviceId;
     String uniqueId;
+    ConnectionState state = ConnectionState.Null;
 
     public Connection(int callId, DeviceId deviceId, String uniqueId) {
         this.callId = callId;
@@ -15,6 +16,25 @@ public class Connection implements CSTAXmlSerializable {
         this.uniqueId = uniqueId;
     }
 
+    public DeviceId getDeviceId() {
+        return deviceId;
+    }
+
+    public void setConnectionState(ConnectionState state) {
+        this.state = state;
+    }
+
+    public ConnectionState getConnectionState() {
+        return state;
+    }
+
+    public String getUniqueId() {
+        return uniqueId;
+    }
+
+    public void setCallId(int callId) {
+        this.callId = callId;
+    }
 
     public Element toXmlElement(Document doc, String tagName) {
         Element e = doc.createElement(tagName);

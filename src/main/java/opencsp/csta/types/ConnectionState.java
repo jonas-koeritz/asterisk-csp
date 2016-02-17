@@ -5,7 +5,7 @@ import opencsp.csta.xml.CSTAXmlSerializable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-public enum LocalConnectionState implements CSTAXmlSerializable {
+public enum ConnectionState implements CSTAXmlSerializable {
     Null("null"),
     Initiated("initiated"),
     Alerting("alerting"),
@@ -14,23 +14,23 @@ public enum LocalConnectionState implements CSTAXmlSerializable {
     Queued("queued"),
     Fail("fail");
 
-    private final String localConnectionState;
+    private final String connectionState;
 
-    LocalConnectionState(String s) {
-        localConnectionState = s;
+    ConnectionState(String s) {
+        connectionState = s;
     }
 
-    public boolean equals(String otherLocalConnectionState) {
-        return otherLocalConnectionState != null && localConnectionState.equals(otherLocalConnectionState);
+    public boolean equals(String otherConnectionState) {
+        return otherConnectionState != null && connectionState.equals(otherConnectionState);
     }
 
     public String toString() {
-        return this.localConnectionState;
+        return this.connectionState;
     }
 
     public Element toXmlElement(Document doc, String tagName) {
         Element e = doc.createElement(tagName);
-        e.setTextContent(localConnectionState);
+        e.setTextContent(connectionState);
         return e;
     }
 }

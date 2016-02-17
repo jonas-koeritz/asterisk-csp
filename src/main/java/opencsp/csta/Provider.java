@@ -98,10 +98,20 @@ public class Provider {
      * @return The Call Object or null if no Call Object with the fiven callID was found
      */
     public Call getCallByCallId(int callId) {
-        return calls.stream()
-                .filter(c -> c.getCallId() == callId)
-                .findFirst().get();
+        if(calls.stream().filter(c -> c.getCallId() == callId).count() > 0) {
+            return calls.stream().filter(c -> c.getCallId() == callId).findFirst().get();
+        }
+        return null;
     }
+
+    public Call findCallForConnection(Connection con) {
+        if(calls.stream().filter(c -> c.getCallId() == con.getCallId()).count() > 0) {
+            return calls.stream().filter(c -> c.getCallId() == con.getCallId()).findFirst().get();
+        }
+        return null;
+    }
+
+
 
     public CSTAXmlSerializable startSession(StartApplicationSession message, Channel clientChannel) {
         int sessionId = getCstaSessionId();
@@ -299,8 +309,8 @@ public class Provider {
     }
 
     public Device findDeviceById(String deviceId) {
-        if(devices.stream().filter(d -> d.getDeviceId().equals(deviceId)).count() > 0) {
-            return devices.stream().filter(d -> d.getDeviceId().equals(deviceId)).findFirst().get();
+        if(devices.stream().filter(d -> d.getDeviceId().toString().equals(deviceId)).count() > 0) {
+            return devices.stream().filter(d -> d.getDeviceId().toString().equals(deviceId)).findFirst().get();
         } else {
             return null;
         }
@@ -330,7 +340,7 @@ public class Provider {
         for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
             OutOfServiceEvent e = new OutOfServiceEvent(
                     p.getValue().getCrossReferenceId(),
-                    new DeviceId(d.getDeviceId())
+                    d.getDeviceId()
             );
             sendEventToClient(p.getKey().getClientChannel(), e);
         }
@@ -342,7 +352,7 @@ public class Provider {
         for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
             BackInServiceEvent e = new BackInServiceEvent(
                     p.getValue().getCrossReferenceId(),
-                    new DeviceId(d.getDeviceId())
+                    d.getDeviceId()
             );
             sendEventToClient(p.getKey().getClientChannel(), e);
         }
@@ -360,6 +370,40 @@ public class Provider {
         return sessionManager;
     }
 
+    public Call associateConnections(String conA, String conB) {
+        Connection cA = getConnectionByUniqueId(conA);
+        if(cA != null) {
+            Connection cB = getConnectionByUniqueId(conB);
+            if(cB != null) {
+                //Drop the callId of the second connection
+                cB.setCallId(cA.getCallId());
+                return addCall(cA.getCallId(), cA, cB);
+            }
+        }
+        return null;
+    }
+
+    public Call addCall(int callId, Connection... connectionsToAdd) {
+        Call c = new Call(callId);
+        for(Connection con : connectionsToAdd) {
+            c.addConnection(con);
+        }
+        calls.add(c);
+        Log.d(TAG, "New Call: " + c.toString());
+        return c;
+    }
+
+    public Connection getConnectionByUniqueId(String uniqueId) {
+        if(connections.stream().filter(c -> c.getUniqueId().equals(uniqueId)).count() > 0) {
+            return connections.stream().filter(c -> c.getUniqueId().equals(uniqueId)).findFirst().get();
+        }
+        return null;
+    }
+
+    public Map<CSTASession, MonitorPoint> getMonitorPointsForDevice(DeviceId deviceId) {
+        return getMonitorPointsForDevice(deviceId.toString());
+    }
+
     public Map<CSTASession, MonitorPoint> getMonitorPointsForDevice(String deviceId) {
         Map<CSTASession, MonitorPoint> points = new HashMap<>();
 
@@ -374,5 +418,113 @@ public class Provider {
         Connection c = new Connection(lastCallId++, deviceId, uniqueId);
         Log.d(TAG, "Created new connection: " + c.toString());
         connections.add(c);
+    }
+
+    public void originated(Device d, Connection con, DeviceId calledDevice) {
+        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(d.getDeviceId());
+        for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
+            CSTASession s = p.getKey();
+            MonitorPoint mp = p.getValue();
+
+            OriginatedEvent event = new OriginatedEvent(mp.getCrossReferenceId(), con, d.getDeviceId(), calledDevice);
+            sendEventToClient(s.getClientChannel(), event);
+
+            con.setConnectionState(ConnectionState.Connected);
+        }
+    }
+
+    public void established(Device callingDevice, Device calledDevice, Connection con) {
+        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(callingDevice.getDeviceId());
+        for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
+            CSTASession s = p.getKey();
+            MonitorPoint mp = p.getValue();
+
+            EstablishedEvent event = new EstablishedEvent(
+                    mp.getCrossReferenceId(),
+                    con,
+                    calledDevice.getDeviceId(),
+                    callingDevice.getDeviceId(),
+                    calledDevice.getDeviceId(),
+                    null);
+            sendEventToClient(s.getClientChannel(), event);
+            con.setConnectionState(ConnectionState.Connected);
+        }
+    }
+
+    public void delivered(Device callingDevice, Device calledDevice, Connection con) {
+        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(callingDevice.getDeviceId());
+        for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
+            CSTASession s = p.getKey();
+            MonitorPoint mp = p.getValue();
+
+            DeliveredEvent event = new DeliveredEvent(
+                mp.getCrossReferenceId(),
+                con,
+                calledDevice.getDeviceId(),
+                callingDevice.getDeviceId(),
+                calledDevice.getDeviceId(),
+                null
+            );
+            sendEventToClient(s.getClientChannel(), event);
+            con.setConnectionState(ConnectionState.Connected);
+        }
+    }
+
+    public void connectionCleared(Device device, Device clearingDevice, Connection con) {
+        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(device.getDeviceId());
+        for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
+            CSTASession s = p.getKey();
+            MonitorPoint mp = p.getValue();
+
+            ConnectionClearedEvent event = new ConnectionClearedEvent(
+                mp.getCrossReferenceId(),
+                con,
+                clearingDevice.getDeviceId()
+            );
+            sendEventToClient(s.getClientChannel(), event);
+            con.setConnectionState(ConnectionState.Null);
+        }
+    }
+
+    public void held(Device holdingDevice, Connection heldConnection) {
+        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(holdingDevice.getDeviceId());
+        for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
+            CSTASession s = p.getKey();
+            MonitorPoint mp = p.getValue();
+
+            HeldEvent event = new HeldEvent(
+                mp.getCrossReferenceId(),
+                heldConnection,
+                holdingDevice.getDeviceId()
+            );
+            sendEventToClient(s.getClientChannel(), event);
+            heldConnection.setConnectionState(ConnectionState.Hold);
+        }
+    }
+
+    public void retrieved(Device retrievingDevice, Connection retrievedConnection) {
+        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(retrievingDevice.getDeviceId());
+        for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
+            CSTASession s = p.getKey();
+            MonitorPoint mp = p.getValue();
+
+            RetrievedEvent event = new RetrievedEvent(
+                    mp.getCrossReferenceId(),
+                    retrievedConnection,
+                    retrievingDevice.getDeviceId()
+            );
+            sendEventToClient(s.getClientChannel(), event);
+            retrievedConnection.setConnectionState(ConnectionState.Connected);
+        }
+    }
+
+    public void removeCall(Call callToBeRemoved) {
+        Log.d(TAG, "Removing Call: " + callToBeRemoved);
+        calls.remove(callToBeRemoved);
+    }
+
+    public void removeConnection(Connection conntectionToBeRemoved) {
+        Log.d(TAG, "Removing Connection: " + conntectionToBeRemoved);
+        connections.remove(conntectionToBeRemoved);
     }
 }

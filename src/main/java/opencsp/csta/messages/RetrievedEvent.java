@@ -8,24 +8,23 @@ import org.w3c.dom.Element;
 public class RetrievedEvent extends CSTAEvent implements CSTAXmlSerializable {
     private CrossReferenceId monitorCrossRefID;
     private Connection retrievedConnection;
-    private DeviceId queue;
-    private DeviceId callingDevice;
-    private DeviceId calledDevice;
-    private DeviceId lastRedirectionDevice;
-    private EventCause cause;
+    private DeviceId retrievingDevice;
+    private EventCause cause = EventCause.Normal;
+
+    public RetrievedEvent(CrossReferenceId monitorCrossRefID, Connection retrievedConnection, DeviceId retrievingDevice) {
+        this.monitorCrossRefID = monitorCrossRefID;
+        this.retrievedConnection = retrievedConnection;
+        this.retrievingDevice = retrievingDevice;
+    }
 
     public Element toXmlElement(Document doc, String tagName) {
         Element e = doc.createElement(tagName);
         e.appendChild(monitorCrossRefID.toXmlElement(doc));
         e.appendChild(retrievedConnection.toXmlElement(doc, "retrievedConnection"));
-        e.appendChild(queue.toXmlElement(doc, "queue"));
-        e.appendChild(callingDevice.toXmlElement(doc, "callingDevice"));
-        e.appendChild(calledDevice.toXmlElement(doc, "calledDevice"));
-        if(lastRedirectionDevice != null) {
-            e.appendChild(lastRedirectionDevice.toXmlElement(doc, "lastRedirectionDevice"));
-        } else {
-            e.appendChild(doc.createElement("lastRedirectionDevice").appendChild(doc.createElement("notRequired")));
-        }
+        e.appendChild(retrievingDevice.toXmlElement(doc, "retrievingDevice"));
+        Element localConnectionInfo = doc.createElement("localConnectionInfo");
+        localConnectionInfo.setTextContent("connected");
+        e.appendChild(localConnectionInfo);
         e.appendChild(cause.toXmlElement(doc));
         return e;
     }

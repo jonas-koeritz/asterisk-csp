@@ -2,6 +2,7 @@ package opencsp.asterisk;
 
 import opencsp.Log;
 import opencsp.csta.Provider;
+import opencsp.csta.messages.EstablishedEvent;
 import opencsp.csta.types.*;
 import opencsp.devices.SIPPhone;
 import org.apache.commons.io.IOExceptionWithCause;
@@ -14,7 +15,9 @@ import org.asteriskjava.manager.response.ManagerResponse;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class Asterisk implements ManagerEventListener {
     private static final String TAG = "Asterisk";
@@ -51,17 +54,37 @@ public class Asterisk implements ManagerEventListener {
 
     }
 
+    private boolean filterEvents(ManagerEvent e) {
+        switch(e.getClass().getSimpleName()) {
+            case "RtcpSentEvent":
+            case "RtcpReceivedEvent":
+            case "JabberEventEvent":
+            case "NewExtenEvent":
+                return false;
+        }
+        return true;
+    }
+
 
     public void onManagerEvent(ManagerEvent event) {
-        Log.d(TAG, "Event: " + event.toString());
+        if(filterEvents(event)) {
+            Log.d(TAG, "Event: " + event.toString());
+        }
 
         String eventClass = event.getClass().getSimpleName();
 
         //Run all pending event handlers
         if(event instanceof ResponseEvent) {
             ResponseEvent response = (ResponseEvent)event;
-            pendingEventHandlers.stream().filter(h -> h.getActionId().equals(response.getActionId())).forEach(h -> h.onEvent(response));
-            pendingEventHandlers.stream().filter(h -> h.getActionId().equals(response.getActionId())).forEach(h -> pendingEventHandlers.remove(h));
+            Iterator<PendingEventHandler> handlers = pendingEventHandlers.iterator();
+
+            while(handlers.hasNext()) {
+                PendingEventHandler h = handlers.next();
+                if(h.getActionId().equals(response.getActionId())) {
+                    h.onEvent(response);
+                    handlers.remove();
+                }
+            }
         }
 
         switch(eventClass) {
@@ -69,12 +92,14 @@ public class Asterisk implements ManagerEventListener {
                 PeerEntryEvent peerEntryEvent = (PeerEntryEvent)event;
                 if(peerEntryEvent.getDynamic()) {
                     SIPPhone d = new SIPPhone(peerEntryEvent.getObjectName(), peerEntryEvent.getIpAddress(), peerEntryEvent.getIpPort());
-                    if (peerEntryEvent.getStatus().contains("OK")) {
+                    if (peerEntryEvent.getStatus() != null && peerEntryEvent.getStatus().contains("OK")) {
                         d.setState(DeviceState.Idle);
                     } else if (peerEntryEvent.getStatus().contains("UNKNOWN")) {
                         d.setState(DeviceState.Unknown);
                     } else if (peerEntryEvent.getStatus().contains("UNREACHABLE")) {
                         d.setState(DeviceState.Unavailable);
+                    } else {
+                        d.setState(DeviceState.Unknown);
                     }
                     provider.addDevice(d);
                 } else {
@@ -87,27 +112,112 @@ public class Asterisk implements ManagerEventListener {
             case "PeerStatusEvent":
                 PeerStatusEvent peerStatusEvent = (PeerStatusEvent)event;
                 Device d = provider.findDeviceById(peerToDeviceId(peerStatusEvent.getPeer()));
-                if(peerStatusEvent.getPeerStatus().equals("Registered")) {
-                    if(d.getState().equals(DeviceState.Unavailable)) {
-                        provider.backInService(d);
+                if(d != null) {
+                    if (peerStatusEvent.getPeerStatus().equals("Registered")) {
+                        if (d.getState().equals(DeviceState.Unavailable)) {
+                            provider.backInService(d);
+                        }
+                        d.setState(DeviceState.Idle);
+                    } else if (peerStatusEvent.getPeerStatus().equals("Unregistered")) {
+                        if (!d.getState().equals(DeviceState.Unavailable)) {
+                            provider.outOfService(d);
+                        }
+                        d.setState(DeviceState.Unavailable);
                     }
-                    d.setState(DeviceState.Idle);
-                } else if(peerStatusEvent.getPeerStatus().equals("Unregistered")) {
-                    if(!d.getState().equals(DeviceState.Unavailable)) {
-                        provider.outOfService(d);
-                    }
-                    d.setState(DeviceState.Unavailable);
                 }
                 break;
             case "NewStateEvent":
+                NewStateEvent newStateEvent = (NewStateEvent)event;
+                Connection c = provider.getConnectionByUniqueId(newStateEvent.getUniqueId());
+                Call call = provider.findCallForConnection(c);
+                Device caller = null;
+
+                if(c != null) {
+                    switch(newStateEvent.getChannelStateDesc()) {
+                        case "Ringing":
+                            //Is there a connection already connected to this call?
+                            if(call.getConnections().stream().filter(con -> con.getConnectionState().equals(ConnectionState.Connected)).count() > 0) {
+                                Connection conA = call.getConnections().stream().filter(con -> con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
+                                Device callee = provider.findDeviceById(channelToDeviceId(newStateEvent.getChannel()));
+                                caller = provider.findDeviceById(conA.getDeviceId());
+                                provider.delivered(caller, provider.findDeviceById(callee.getDeviceId()), conA);
+                            }
+                            break;
+                        case "Up":
+                            if(call != null) {
+                                //Is there a connection not already in state connected
+                                if (call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).count() > 0) {
+                                    Connection callee = call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
+                                    caller = provider.findDeviceById(channelToDeviceId(newStateEvent.getChannel()));
+                                    provider.established(caller, provider.findDeviceById(callee.getDeviceId()), c);
+                                }
+                            }
+                            break;
+                    }
+                }
                 break;
             case "DialEvent":
                 DialEvent dialEvent = (DialEvent)event;
+                if(dialEvent.getSubEvent().equals(DialEvent.SUBEVENT_BEGIN)) {
+                    provider.associateConnections(dialEvent.getUniqueId(), dialEvent.getDestUniqueId());
 
+                    //Originating Device
+                    Device dA = provider.findDeviceById(channelToDeviceId(dialEvent.getChannel()));
+                    if(dA != null) {
+                        provider.originated(dA, provider.getConnectionByUniqueId(dialEvent.getUniqueId()), channelToDeviceId(dialEvent.getDestination()));
+                    }
+
+                    //Destination Device
+                    Device dB = provider.findDeviceById(channelToDeviceId(dialEvent.getDestination()));
+
+
+                } else {
+                    //Dialstatus is available (reason)
+                }
+                break;
+            case "HangupRequestEvent":
+                HangupRequestEvent hangupEvent = (HangupRequestEvent)event;
+                Device clearingDevice = provider.findDeviceById(channelToDeviceId(hangupEvent.getChannel()));
+                Connection clearedConnection = provider.getConnectionByUniqueId(hangupEvent.getUniqueId());
+                Call clearedCall = provider.findCallForConnection(clearedConnection);
+                Iterator<Connection> clearedConnections = clearedCall.getConnections().iterator();
+                while(clearedConnections.hasNext()) {
+                    Connection con = clearedConnections.next();
+                    provider.connectionCleared(
+                            provider.findDeviceById(con.getDeviceId()),
+                            clearingDevice,
+                            con
+                    );
+                    clearedConnections.remove();
+                    provider.removeConnection(con);
+                }
+                provider.removeCall(clearedCall);
+                break;
+            case "HoldEvent":
+                HoldEvent holdEvent = (HoldEvent)event;
+                Device holdDevice = provider.findDeviceById(channelToDeviceId(holdEvent.getChannel()));
+                Connection holdConnection = provider.getConnectionByUniqueId(holdEvent.getUniqueId());
+                if(holdEvent.getStatus()) {
+                    provider.held(holdDevice, holdConnection);
+                } else {
+                    provider.retrieved(holdDevice, holdConnection);
+                }
                 break;
             case "NewChannelEvent":
                 NewChannelEvent newChannelEvent = (NewChannelEvent)event;
                 provider.newConnection(channelToDeviceId(newChannelEvent.getChannel()), newChannelEvent.getUniqueId());
+            case "MasqueradeEvent":
+                MasqueradeEvent masqueradeEvent = (MasqueradeEvent)event;
+                //This is a direct Pick-Up
+                if(masqueradeEvent.getOriginalStateDesc().equals("Ringing") &&
+                                masqueradeEvent.getCloneStateDesc().equals("Up")
+                        ) {
+                    Device original = provider.findDeviceById(channelToDeviceId(masqueradeEvent.getOriginal()));
+                    Device clone = provider.findDeviceById(channelToDeviceId(masqueradeEvent.getClone()));
+
+                }
+
+                break;
             default:
                 break;
         }

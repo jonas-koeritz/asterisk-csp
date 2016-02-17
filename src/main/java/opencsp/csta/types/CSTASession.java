@@ -110,8 +110,8 @@ public class CSTASession {
     }
 
     public MonitorPoint getMonitorPointForDevice(String deviceId) {
-        if(monitorPoints.stream().filter(m -> m.getMonitoredDevice().getDeviceId().equals(deviceId)).count() > 0) {
-            return monitorPoints.stream().filter(m -> m.getMonitoredDevice().getDeviceId().equals(deviceId)).findFirst().get();
+        if(monitorPoints.stream().filter(m -> m.getMonitoredDevice().getDeviceId().toString().equals(deviceId)).count() > 0) {
+            return monitorPoints.stream().filter(m -> m.getMonitoredDevice().getDeviceId().toString().equals(deviceId)).findFirst().get();
         } else {
             return null;
         }

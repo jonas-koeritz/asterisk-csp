@@ -12,7 +12,7 @@ public class ServiceInitiatedEvent extends CSTAEvent implements CSTAXmlSerializa
 
     protected DeviceId initiatingDevice;
 
-    protected LocalConnectionState localConnectionInfo = LocalConnectionState.Initiated;
+    protected ConnectionState localConnectionInfo = ConnectionState.Initiated;
 
     public ServiceInitiatedEvent(CrossReferenceId monitorCrossRefID, Connection initiatedConnection, DeviceId initiatingDevice) {
         this.monitorCrossRefID = monitorCrossRefID;

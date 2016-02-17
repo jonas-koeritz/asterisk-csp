@@ -21,7 +21,9 @@ public class DivertedEvent extends CSTAEvent implements CSTAXmlSerializable {
         if(lastRedirectionDevice != null) {
             e.appendChild(lastRedirectionDevice.toXmlElement(doc, "lastRedirectionDevice"));
         } else {
-            e.appendChild(doc.createElement("lastRedirectionDevice").appendChild(doc.createElement("notRequired")));
+            Element lrd = doc.createElement("lastRedirectionDevice");
+            lrd.appendChild(doc.createElement("notRequired"));
+            e.appendChild(lrd);
         }
         e.appendChild(cause.toXmlElement(doc));
         return e;
