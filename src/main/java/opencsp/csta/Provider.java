@@ -112,7 +112,7 @@ public class Provider {
     }
 
     public List<Connection> findConnectionsForDevice(Device d) {
-        return connections.stream().filter(c -> c.getDeviceId().toString().equals(d.getDeviceId().toString())).collect(Collectors.toCollection(ArrayList::new));
+        return connections.stream().filter(c -> c.getDeviceId().toString().equals(d.getDeviceId().toString())).collect(Collectors.toList());
     }
 
 
@@ -339,6 +339,10 @@ public class Provider {
         return devices;
     }
 
+    public List<Call> getCalls() {
+        return calls;
+    }
+
     public void outOfService(Device d) {
         Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(d.getDeviceId());
         for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
@@ -438,7 +442,7 @@ public class Provider {
     }
 
     public void established(Device callingDevice, Device calledDevice, Device answeringDevice, Connection con) {
-        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(callingDevice.getDeviceId());
+        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(answeringDevice.getDeviceId());
         for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
             CSTASession s = p.getKey();
             MonitorPoint mp = p.getValue();
@@ -446,7 +450,23 @@ public class Provider {
             EstablishedEvent event = new EstablishedEvent(
                     mp.getCrossReferenceId(),
                     con,
+                    answeringDevice.getDeviceId(),
+                    callingDevice.getDeviceId(),
                     calledDevice.getDeviceId(),
+                    null);
+            sendEventToClient(s.getClientChannel(), event);
+            con.setConnectionState(ConnectionState.Connected);
+        }
+
+        points = getMonitorPointsForDevice(callingDevice.getDeviceId());
+        for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
+            CSTASession s = p.getKey();
+            MonitorPoint mp = p.getValue();
+
+            EstablishedEvent event = new EstablishedEvent(
+                    mp.getCrossReferenceId(),
+                    con,
+                    answeringDevice.getDeviceId(),
                     callingDevice.getDeviceId(),
                     calledDevice.getDeviceId(),
                     null);

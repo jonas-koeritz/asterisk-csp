@@ -15,6 +15,30 @@ html
                         td #{session.getSessionId()}
                         td #{session.getClientChannel().remoteAddress()}
 
+        h3 Active Calls
+        table
+            thead
+                tr
+                    th Call ID
+                    th Connections
+            tbody
+                each call in calls
+                    tr
+                        td #{call.getCallId()}
+                        td
+                            table
+                                thead
+                                    tr
+                                        th Device ID
+                                        th Unique ID
+                                        th State
+                                tbody
+                                    each connection in call.getConnections()
+                                        tr
+                                            td #{connection.getDeviceId().toString()}
+                                            td #{connection.getUniqueId()}
+                                            td #{connection.getConnectionState().toString()}
+
         h3 Devices
         table
             thead

@@ -61,6 +61,7 @@ public class Asterisk implements ManagerEventListener {
             case "RtcpReceivedEvent":
             case "JabberEventEvent":
             case "NewExtenEvent":
+            case "VarSetEvent":
                 return false;
         }
         return true;
@@ -146,11 +147,14 @@ public class Asterisk implements ManagerEventListener {
                             break;
                         case "Up":
                             if(call != null) {
-                                //Is there a connection not already in state connected
-                                if (call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).count() > 0) {
+                                //Is this an Accept scenario? One-Call should be in connected, one in any other state
+                                if (call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).count() > 0 &&
+                                    call.getConnections().stream().filter(con -> con.getConnectionState().equals(ConnectionState.Connected)).count() > 0) {
                                     Connection callee = call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
-                                    caller = provider.findDeviceById(channelToDeviceId(newStateEvent.getChannel()));
-                                    provider.established(caller, provider.findDeviceById(callee.getDeviceId()), provider.findDeviceById(callee.getDeviceId()), c);
+                                    Connection callingConnection = call.getConnections().stream().filter(con -> con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
+                                    Device callingDevice = provider.findDeviceById(callingConnection.getDeviceId());
+                                    provider.established(callingDevice, provider.findDeviceById(callee.getDeviceId()), provider.findDeviceById(callee.getDeviceId()), callingConnection);
+                                    callee.setConnectionState(ConnectionState.Connected);
                                 }
                             }
                             break;
@@ -166,6 +170,7 @@ public class Asterisk implements ManagerEventListener {
                     Device dA = provider.findDeviceById(channelToDeviceId(dialEvent.getChannel()));
                     if(dA != null) {
                         provider.originated(dA, provider.getConnectionByUniqueId(dialEvent.getUniqueId()), channelToDeviceId(dialEvent.getDestination()));
+                        provider.getConnectionByUniqueId(dialEvent.getUniqueId()).setConnectionState(ConnectionState.Connected);
                     }
 
                     //Destination Device
@@ -180,19 +185,21 @@ public class Asterisk implements ManagerEventListener {
                 HangupRequestEvent hangupEvent = (HangupRequestEvent)event;
                 Device clearingDevice = provider.findDeviceById(channelToDeviceId(hangupEvent.getChannel()));
                 Connection clearedConnection = provider.getConnectionByUniqueId(hangupEvent.getUniqueId());
-                Call clearedCall = provider.findCallForConnection(clearedConnection);
-                Iterator<Connection> clearedConnections = clearedCall.getConnections().iterator();
-                while(clearedConnections.hasNext()) {
-                    Connection con = clearedConnections.next();
-                    provider.connectionCleared(
-                            provider.findDeviceById(con.getDeviceId()),
-                            clearingDevice,
-                            con
-                    );
-                    clearedConnections.remove();
-                    provider.removeConnection(con);
+                if(clearedConnection != null) {
+                    Call clearedCall = provider.getCallByCallId(clearedConnection.getCallId());
+                    Iterator<Connection> clearedConnections = clearedCall.getConnections().iterator();
+                    while (clearedConnections.hasNext()) {
+                        Connection con = clearedConnections.next();
+                        provider.connectionCleared(
+                                provider.findDeviceById(con.getDeviceId()),
+                                clearingDevice,
+                                con
+                        );
+                        clearedConnections.remove();
+                        provider.removeConnection(con);
+                    }
+                    provider.removeCall(clearedCall);
                 }
-                provider.removeCall(clearedCall);
                 break;
             case "HoldEvent":
                 HoldEvent holdEvent = (HoldEvent)event;
@@ -200,9 +207,12 @@ public class Asterisk implements ManagerEventListener {
                 Connection holdConnection = provider.getConnectionByUniqueId(holdEvent.getUniqueId());
                 if(holdEvent.getStatus()) {
                     provider.held(holdDevice, holdConnection);
+                    holdConnection.setConnectionState(ConnectionState.Hold);
                 } else {
                     provider.retrieved(holdDevice, holdConnection);
+                    holdConnection.setConnectionState(ConnectionState.Connected);
                 }
+
                 break;
             case "NewChannelEvent":
                 NewChannelEvent newChannelEvent = (NewChannelEvent)event;
