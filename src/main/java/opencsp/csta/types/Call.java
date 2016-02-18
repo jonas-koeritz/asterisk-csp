@@ -7,6 +7,16 @@ public class Call {
     private int callId;
     private List<Connection> connections;
 
+    private DeviceId lastRedirectionDevice;
+
+    public void setLastRedirectionDevice(DeviceId lastRedirectionDevice) {
+        this.lastRedirectionDevice = lastRedirectionDevice;
+    }
+
+
+    public DeviceId getLastRedirectionDevice() {
+        return lastRedirectionDevice;
+    }
 
     public int getCallId() {
         return callId;

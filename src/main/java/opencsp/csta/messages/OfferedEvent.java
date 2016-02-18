@@ -12,7 +12,16 @@ public class OfferedEvent extends CSTAEvent implements CSTAXmlSerializable {
     private DeviceId callingDevice;
     private DeviceId calledDevice;
     private DeviceId lastRedirectionDevice;
-    private EventCause cause;
+    private EventCause cause = EventCause.NewCall;
+
+    public OfferedEvent(CrossReferenceId monitorCrossRefID, Connection connection, DeviceId offeredDevice, DeviceId callingDevice, DeviceId calledDevice, DeviceId lastRedirectionDevice) {
+        this.monitorCrossRefID = monitorCrossRefID;
+        this.offeredConnection = connection;
+        this.offeredDevice = offeredDevice;
+        this.callingDevice = callingDevice;
+        this.calledDevice = calledDevice;
+        this.lastRedirectionDevice = lastRedirectionDevice;
+    }
 
     public Element toXmlElement(Document doc, String tagName) {
         Element e = doc.createElement(tagName);

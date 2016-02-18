@@ -24,6 +24,11 @@ public class DeliveredEvent extends CSTAEvent implements CSTAXmlSerializable {
         this(monitorCrossRefID, connection, alertingDevice, callingDevice, calledDevice, lastRedirectionDevice, EventCause.NewCall);
     }
 
+    public DeliveredEvent(CrossReferenceId monitorCrossRefID, Connection connection, DeviceId alertingDevice, DeviceId callingDevice, DeviceId calledDevice, DeviceId lastRedirectionDevice, ConnectionState localConnectionInfo) {
+        this(monitorCrossRefID, connection, alertingDevice, callingDevice, calledDevice, lastRedirectionDevice, EventCause.NewCall);
+        this.localConnectionInfo = localConnectionInfo;
+    }
+
     public DeliveredEvent(CrossReferenceId monitorCrossRefID, Connection connection, DeviceId alertingDevice, DeviceId callingDevice, DeviceId calledDevice, DeviceId lastRedirectionDevice, EventCause cause) {
         this.monitorCrossRefID = monitorCrossRefID;
         this.connection = connection;

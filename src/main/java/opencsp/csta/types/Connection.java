@@ -9,11 +9,21 @@ public class Connection implements CSTAXmlSerializable {
     DeviceId deviceId;
     String uniqueId;
     ConnectionState state = ConnectionState.Null;
+    private String presentation = "";
 
     public Connection(int callId, DeviceId deviceId, String uniqueId) {
         this.callId = callId;
         this.deviceId = deviceId;
         this.uniqueId = uniqueId;
+        this.presentation = "";
+    }
+
+    public void setPresentation(String presentation) {
+        this.presentation = presentation;
+    }
+
+    public String getPresentation() {
+        return presentation;
     }
 
     public DeviceId getDeviceId() {
@@ -42,7 +52,16 @@ public class Connection implements CSTAXmlSerializable {
         cid.setTextContent(Integer.toString(this.callId));
         e.appendChild(cid);
         if(deviceId != null) {
-            e.appendChild(deviceId.toXmlElement(doc, "deviceID"));
+            if(presentation.equals("")) {
+                e.appendChild(deviceId.toXmlElement(doc, "deviceID"));
+            } else {
+                Element pres = doc.createElement("deviceID");
+                Element ident = doc.createElement("deviceIdentifier");
+                ident.setAttribute("typeOfNumber", "dialingNumber");
+                ident.setTextContent(presentation);
+                pres.appendChild(ident);
+                e.appendChild(pres);
+            }
         }
         return e;
     }
