@@ -10,14 +10,9 @@ import org.asteriskjava.live.*;
 import org.asteriskjava.manager.*;
 import org.asteriskjava.manager.action.*;
 import org.asteriskjava.manager.event.*;
-import org.asteriskjava.manager.response.ManagerResponse;
-
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Asterisk implements ManagerEventListener {
@@ -42,17 +37,20 @@ public class Asterisk implements ManagerEventListener {
         this.amiUser = amiUser;
         this.amiPassword = amiPassword;
 
+
         pendingEventHandlers = new ArrayList<PendingEventHandler>();
 
         asterisk = new DefaultAsteriskServer(asteriskServer, amiUser, amiPassword);
+
         managerConnection = asterisk.getManagerConnection();
+        managerConnection.registerUserEventClass(EndpointListCompleteEvent.class);
+        managerConnection.registerUserEventClass(EndpointListEvent.class);
 
         managerConnection.login();
         managerConnection.addEventListener(this);
 
         trySendAction(new SipPeersAction());
-
-
+        trySendAction(new PJSIPShowEndpointsAction());
     }
 
     private boolean filterEvents(ManagerEvent e) {
@@ -106,6 +104,27 @@ public class Asterisk implements ManagerEventListener {
                     provider.addDevice(d);
                 } else {
                     Device d = new Device(peerEntryEvent.getObjectName());
+                    d.setCategory(DeviceCategory.NetworkInterface);
+                    d.setState(DeviceState.Idle);
+                    provider.addDevice(d);
+                }
+                break;
+            case "EndpointListEvent":
+                EndpointListEvent endpointListEvent = (EndpointListEvent)event;
+                if(endpointListEvent.getAuths() != null) {
+                    SIPPhone d = new SIPPhone(endpointListEvent.getObjectName(), endpointListEvent.getIpAddress(), endpointListEvent.getIpPort());
+                    if(endpointListEvent.getDeviceState() != null && endpointListEvent.getDeviceState().contains("Not in use")) {
+                        d.setState(DeviceState.Idle);
+                    } else if(endpointListEvent.getDeviceState().contains("In use")) {
+                        d.setState(DeviceState.InUse);
+                    } else if(endpointListEvent.getDeviceState().contains("Unavailable")) {
+                        d.setState(DeviceState.Unavailable);
+                    } else {
+                        d.setState(DeviceState.Unknown);
+                    }
+                    provider.addDevice(d);
+                } else {
+                    Device d = new Device(endpointListEvent.getObjectName());
                     d.setCategory(DeviceCategory.NetworkInterface);
                     d.setState(DeviceState.Idle);
                     provider.addDevice(d);

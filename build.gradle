@@ -32,6 +32,7 @@ dependencies {
     compile 'com.sparkjava:spark-template-jade:2.3'
     compile 'io.netty:netty-all:5.0.0.Alpha2'
     compile 'org.asteriskjava:asterisk-java:1.0.0-final'
+    compile 'ch.qos.logback:logback-classic:1.1.6'
     testCompile 'junit:junit:4.12'
 }
 
