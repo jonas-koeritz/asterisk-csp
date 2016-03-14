@@ -7,10 +7,10 @@
         </encoder>
     </appender>
 
-    <logger name="o.e.j.u.t.s.ExecuteProduceConsume" level="OFF" />
-    <logger name="o.e.j.u.component.AbstractLifeCycle" level="OFF" />
-    <logger name="o.e.j.util.thread.QueuedThreadPool" level="OFF" />
-    <logger name="org.asteriskjava.manager.internal.EventBuilderImpl" level="OFF" />
+    <logger name="org.eclipse.jetty" level="OFF" />
+    <!--<logger name="org.asteriskjava.manager.internal" level="OFF" />-->
+    <logger name="io.netty" level="OFF" />
+    <logger name="spark" level="OFF" />
 
     <root level="DEBUG">
         <appender-ref ref="STDOUT" />

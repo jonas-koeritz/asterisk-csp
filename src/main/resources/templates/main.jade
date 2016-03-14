@@ -32,12 +32,14 @@ html
                                         th Device ID
                                         th Unique ID
                                         th State
+                                        th Presentation
                                 tbody
                                     each connection in call.getConnections()
                                         tr
                                             td #{connection.getDeviceId().toString()}
                                             td #{connection.getUniqueId()}
                                             td #{connection.getConnectionState().toString()}
+                                            td #{connection.getPresentation()}
 
         h3 Devices
         table

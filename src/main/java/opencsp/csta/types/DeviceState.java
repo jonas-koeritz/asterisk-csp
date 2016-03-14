@@ -9,6 +9,7 @@ public enum DeviceState {
     Unavailable("UNAVAILABLE"),
     Ringing("RINGING"),
     RingInUse("RINGINUSE"),
+    Ring("RING"),
     OnHold("ONHOLD");
 
     private final String state;
@@ -23,5 +24,33 @@ public enum DeviceState {
 
     public String toString() {
         return this.state;
+    }
+
+    public static DeviceState fromString(String deviceState) {
+        deviceState = deviceState.toUpperCase();
+        switch(deviceState) {
+            case "UNKNOWN":
+                return Unknown;
+            case "NOT_INUSE":
+                return Idle;
+            case "INUSE":
+            case "UP":
+                return InUse;
+            case "BUSY":
+                return Busy;
+            case "INVALID":
+                return Invalid;
+            case "UNAVAILBLE":
+                return Unavailable;
+            case "RINGING":
+                return Ringing;
+            case "RING":
+                return Ring;
+            case "RINGINUSE":
+                return RingInUse;
+            case "ONHOLD":
+                return OnHold;
+        }
+        return Unknown;
     }
 }

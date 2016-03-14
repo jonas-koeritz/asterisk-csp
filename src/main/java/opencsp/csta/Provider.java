@@ -89,6 +89,8 @@ public class Provider {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
+
+
     /**
      * Search for a specific callID in Provider
      * @param callId The callID to search for
@@ -336,6 +338,7 @@ public class Provider {
         return devices;
     }
 
+
     public List<Call> getCalls() {
         return calls;
     }
@@ -460,7 +463,7 @@ public class Provider {
         }
     }
 
-    public void established(Device callingDevice, Device calledDevice, Device answeringDevice, Connection con, String callerPresentation) {
+    public void established(Device callingDevice, Device calledDevice, Device answeringDevice, Connection con, String callerPresentation, String calleePresentation, String answeringDevicePresentation) {
         Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(answeringDevice.getDeviceId());
         for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
             CSTASession s = p.getKey();
@@ -469,9 +472,9 @@ public class Provider {
             EstablishedEvent event = new EstablishedEvent(
                     mp.getCrossReferenceId(),
                     con,
-                    answeringDevice.getDeviceId(),
+                    answeringDevicePresentation != null ? new DeviceId(answeringDevicePresentation) : answeringDevice.getDeviceId(),
                     callerPresentation != null ? new DeviceId(callerPresentation) : callingDevice.getDeviceId(),
-                    calledDevice.getDeviceId(),
+                    calleePresentation != null ? new DeviceId(calleePresentation) : calledDevice.getDeviceId(),
                     null);
             sendEventToClient(s.getClientChannel(), event);
             con.setConnectionState(ConnectionState.Connected);
@@ -485,16 +488,16 @@ public class Provider {
             EstablishedEvent event = new EstablishedEvent(
                     mp.getCrossReferenceId(),
                     con,
-                    answeringDevice.getDeviceId(),
+                    answeringDevicePresentation != null ? new DeviceId(answeringDevicePresentation) : answeringDevice.getDeviceId(),
                     callerPresentation != null ? new DeviceId(callerPresentation) : callingDevice.getDeviceId(),
-                    calledDevice.getDeviceId(),
+                    calleePresentation != null ? new DeviceId(calleePresentation) : calledDevice.getDeviceId(),
                     null);
             sendEventToClient(s.getClientChannel(), event);
             con.setConnectionState(ConnectionState.Connected);
         }
     }
 
-    public void delivered(Device callingDevice, Device calledDevice, Connection con, String callerPresentation) {
+    public void delivered(Device callingDevice, Device calledDevice, Connection con, String callerPresentation, String calleePresentation) {
         Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(con.getDeviceId());
         for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
             CSTASession s = p.getKey();
@@ -504,9 +507,9 @@ public class Provider {
                 DeliveredEvent event = new DeliveredEvent(
                         mp.getCrossReferenceId(),
                         con,
-                        calledDevice.getDeviceId(),
+                        calleePresentation != null ? new DeviceId(calleePresentation) : calledDevice.getDeviceId(),
                         callerPresentation != null ? new DeviceId(callerPresentation) : callingDevice.getDeviceId(),
-                        calledDevice.getDeviceId(),
+                        calleePresentation != null ? new DeviceId(calleePresentation) : calledDevice.getDeviceId(),
                         null,
                         ConnectionState.Alerting
                 );
@@ -516,9 +519,9 @@ public class Provider {
                 DeliveredEvent event = new DeliveredEvent(
                         mp.getCrossReferenceId(),
                         con,
-                        calledDevice.getDeviceId(),
+                        calleePresentation != null ? new DeviceId(calleePresentation) : calledDevice.getDeviceId(),
                         callerPresentation != null ? new DeviceId(callerPresentation) : callingDevice.getDeviceId(),
-                        calledDevice.getDeviceId(),
+                        calleePresentation != null ? new DeviceId(calleePresentation) : calledDevice.getDeviceId(),
                         null
                 );
                 sendEventToClient(s.getClientChannel(), event);
@@ -527,7 +530,7 @@ public class Provider {
         }
     }
 
-    public void offered(Device callingDevice, Device calledDevice, Connection con, String callerPresentation) {
+    public void offered(Device callingDevice, Device calledDevice, Connection con, String callerPresentation, String calleePresentation) {
         Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(calledDevice.getDeviceId());
         for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
             CSTASession s = p.getKey();
@@ -536,9 +539,9 @@ public class Provider {
             OfferedEvent event = new OfferedEvent(
                     mp.getCrossReferenceId(),
                     con,
-                    calledDevice.getDeviceId(),
+                    calleePresentation != null ? new DeviceId(calleePresentation) : calledDevice.getDeviceId(),
                     callerPresentation != null ? new DeviceId(callerPresentation) : callingDevice.getDeviceId(),
-                    calledDevice.getDeviceId(),
+                    calleePresentation != null ? new DeviceId(calleePresentation) : calledDevice.getDeviceId(),
                     null
             );
             sendEventToClient(s.getClientChannel(), event);
