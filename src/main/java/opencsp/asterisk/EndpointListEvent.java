@@ -91,9 +91,11 @@ public class EndpointListEvent extends ManagerEvent {
         this.contacts = contacts;
         Pattern hostAndPort = Pattern.compile(".*@([\\d\\.]*):(\\d*).*$");
         Matcher m = hostAndPort.matcher(contacts);
-        if(m.groupCount() == 2) {
-            this.ipAddress = m.group(1);
-            this.ipPort = Integer.parseInt(m.group(2));
+        if(m.matches()) {
+            if (m.groupCount() == 2) {
+                this.ipAddress = m.group(1);
+                this.ipPort = Integer.parseInt(m.group(2));
+            }
         }
     }
 
