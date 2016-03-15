@@ -89,316 +89,347 @@ public class Asterisk implements ManagerEventListener {
             }
         }
 
+
+
         switch(eventClass) {
             case "PeerEntryEvent":
-                PeerEntryEvent peerEntryEvent = (PeerEntryEvent)event;
-                if(peerEntryEvent.getDynamic()) {
-                    SIPPhone d = new SIPPhone(peerEntryEvent.getObjectName(), peerEntryEvent.getIpAddress(), peerEntryEvent.getIpPort());
-                    if (peerEntryEvent.getStatus() != null && peerEntryEvent.getStatus().contains("OK")) {
-                        d.setState(DeviceState.Idle);
-                    } else if (peerEntryEvent.getStatus().contains("UNKNOWN")) {
-                        d.setState(DeviceState.Unknown);
-                    } else if (peerEntryEvent.getStatus().contains("UNREACHABLE")) {
-                        d.setState(DeviceState.Unavailable);
-                    } else {
-                        d.setState(DeviceState.Unknown);
-                    }
-                    provider.addDevice(d);
-                } else {
-                    Device d = new Device(peerEntryEvent.getObjectName());
-                    d.setCategory(DeviceCategory.NetworkInterface);
-                    d.setState(DeviceState.Idle);
-                    provider.addDevice(d);
-                }
+                handleEvent((PeerEntryEvent)event);
                 break;
             case "EndpointListEvent":
-                EndpointListEvent endpointListEvent = (EndpointListEvent)event;
-                if(endpointListEvent.getAuths() != null) {
-                    SIPPhone d = new SIPPhone(endpointListEvent.getObjectName(), endpointListEvent.getIpAddress(), endpointListEvent.getIpPort());
-                    if(endpointListEvent.getDeviceState() != null && endpointListEvent.getDeviceState().contains("Not in use")) {
-                        d.setState(DeviceState.Idle);
-                    } else if(endpointListEvent.getDeviceState().contains("In use")) {
-                        d.setState(DeviceState.InUse);
-                    } else if(endpointListEvent.getDeviceState().contains("Unavailable")) {
-                        d.setState(DeviceState.Unavailable);
-                    } else {
-                        d.setState(DeviceState.Unknown);
-                    }
-                    provider.addDevice(d);
-                } else {
-                    Device d = new Device(endpointListEvent.getObjectName());
-                    d.setCategory(DeviceCategory.NetworkInterface);
-                    d.setState(DeviceState.Idle);
-                    provider.addDevice(d);
-                }
+                handleEvent((EndpointListEvent)event);
                 break;
             case "PeerStatusEvent":
-                PeerStatusEvent peerStatusEvent = (PeerStatusEvent)event;
-                Device d = provider.findDeviceById(peerToDeviceId(peerStatusEvent.getPeer()));
-                if(d != null) {
-                    if (peerStatusEvent.getPeerStatus().equals("Registered")) {
-                        if (d.getState().equals(DeviceState.Unavailable)) {
-                            provider.backInService(d);
-                        }
-                        d.setState(DeviceState.Idle);
-                    } else if (peerStatusEvent.getPeerStatus().equals("Unregistered")) {
-                        if (!d.getState().equals(DeviceState.Unavailable)) {
-                            provider.outOfService(d);
-                        }
-                        d.setState(DeviceState.Unavailable);
-                    }
-                }
+                handleEvent((PeerStatusEvent)event);
                 break;
             case "NewStateEvent":
-                NewStateEvent newStateEvent = (NewStateEvent)event;
-                Connection c = provider.getConnectionByUniqueId(newStateEvent.getUniqueId());
-                Call call = provider.getCallByCallId(c.getCallId());
-
-
-                Device caller = null;
-
-                if(c != null) {
-                    if(provider.findDeviceById(c.getDeviceId()).getCategory() == DeviceCategory.Station) {
-                        provider.findDeviceById(c.getDeviceId()).setState(DeviceState.fromString(newStateEvent.getChannelStateDesc()));
-                    }
-
-                    switch(newStateEvent.getChannelStateDesc()) {
-                        case "Ringing":
-                            if(call == null) {
-                                //There has to be a call this device is participating in
-                                Iterator<Call> allCalls = provider.getCalls().iterator();
-                                while(allCalls.hasNext()) {
-                                    Call callToCheck = allCalls.next();
-                                    if(callToCheck.getConnections().stream().filter(checkedCon -> checkedCon.getDeviceId().toString().equals(channelToDeviceId(newStateEvent.getChannel()).toString())).count() > 0) {
-                                        call = callToCheck;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if(call != null) {
-                                //Is there a connection already connected to this call?
-                                if (call.getConnections().stream().filter(con -> con.getConnectionState().equals(ConnectionState.Connected)).count() > 0) {
-                                    Connection conA = call.getConnections().stream().filter(con -> con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
-                                    Connection conB = call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
-                                    Device callee = provider.findDeviceById(channelToDeviceId(newStateEvent.getChannel()));
-                                    caller = provider.findDeviceById(conA.getDeviceId());
-                                    String conAPresentation = conA.getPresentation().length() > 0 ? conA.getPresentation() : null;
-                                    String conBPresentation = conB.getPresentation().length() > 0 ? conB.getPresentation() : null;
-
-                                    provider.delivered(caller, provider.findDeviceById(callee.getDeviceId()), conA, conAPresentation, conBPresentation);
-                                    provider.offered(caller, provider.findDeviceById(callee.getDeviceId()), conB, conAPresentation, conBPresentation);
-                                    provider.delivered(caller, provider.findDeviceById(callee.getDeviceId()), conB, conAPresentation, conBPresentation);
-                                }
-
-
-                            }
-                            break;
-                        case "Up":
-                            if(call != null) {
-                                //Is this an Accept scenario? One-Call should be in connected, one in any other state
-                                if (call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).count() > 0 &&
-                                    call.getConnections().stream().filter(con -> con.getConnectionState().equals(ConnectionState.Connected)).count() > 0) {
-                                    Connection callee = call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
-                                    Connection callingConnection = call.getConnections().stream().filter(con -> con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
-                                    Device callingDevice = provider.findDeviceById(callingConnection.getDeviceId());
-                                    String callingConnectionPresentation = callingConnection.getPresentation().length() > 0 ? callingConnection.getPresentation() : null;
-                                    String calleePresentation = callee.getPresentation().length() > 0 ? callee.getPresentation() : null;
-                                    provider.established(callingDevice, provider.findDeviceById(callee.getDeviceId()), provider.findDeviceById(callee.getDeviceId()), callingConnection, callingConnectionPresentation, calleePresentation, calleePresentation);
-                                    callee.setConnectionState(ConnectionState.Connected);
-                                }
-                            }
-                            break;
-                    }
-                }
+                handleEvent((NewStateEvent)event);
                 break;
             case "DialEvent":
-                DialEvent dialEvent = (DialEvent)event;
-                //Ignore internal dialing
-                if(getChannelType(dialEvent.getChannel()).equals("Local"))
-                    break;
-
-                if(dialEvent.getSubEvent().equals(DialEvent.SUBEVENT_BEGIN)) {
-                    provider.associateConnections(dialEvent.getUniqueId(), dialEvent.getDestUniqueId());
-
-                    //Originating Device
-                    Device dA = provider.findDeviceById(channelToDeviceId(dialEvent.getChannel()));
-                    Device dB = provider.findDeviceById(channelToDeviceId(dialEvent.getDestination()));
-                    Connection outgoingConnection = provider.getConnectionByUniqueId(dialEvent.getDestUniqueId());
-
-                    if(dB.getCategory().equals(DeviceCategory.NetworkInterface)) {
-                        outgoingConnection.setPresentation(dialEvent.getConnectedlinenum());
-                    }
-
-                    if(dA != null) {
-                        provider.originated(
-                                dA,
-                                provider.getConnectionByUniqueId(dialEvent.getUniqueId()),
-                                channelToDeviceId(dialEvent.getDestination()),
-                                outgoingConnection.getPresentation().length() > 0 ? outgoingConnection.getPresentation() : null
-                        );
-                        provider.getConnectionByUniqueId(dialEvent.getUniqueId()).setConnectionState(ConnectionState.Connected);
-                    }
-
-                    //Destination Device
-
-
-                } else {
-                    //Dialstatus is available (reason)
-                }
+                handleEvent((DialEvent)event);
                 break;
             case "NewCallerIdEvent":
-                NewCallerIdEvent newCallerIdEvent = (NewCallerIdEvent)event;
-                Connection newCallerIdConnection = provider.getConnectionByUniqueId(newCallerIdEvent.getUniqueId());
-                if(newCallerIdConnection != null) {
-                    Device newCallerIdDevice = provider.findDeviceById(newCallerIdConnection.getDeviceId());
-                    if(newCallerIdDevice != null && newCallerIdDevice.getCategory().equals(DeviceCategory.NetworkInterface)) {
-                        newCallerIdConnection.setPresentation(newCallerIdEvent.getCallerIdNum());
-                        Log.d(TAG, "Set new presentation for Connection " + newCallerIdConnection.toString() + ": " + newCallerIdEvent.getCallerIdNum());
-                    }
-                }
+                handleEvent((NewCallerIdEvent)event);
                 break;
             case "DialBeginEvent":
-                DialBeginEvent dialBeginEvent = (DialBeginEvent)event;
-                if(getChannelType(dialBeginEvent.getChannel()).equals("Local"))
-                    break;
-
-                provider.associateConnections(dialBeginEvent.getUniqueId(), dialBeginEvent.getDestUniqueId());
-
-                //Originating Device
-                Device dA = provider.findDeviceById(channelToDeviceId(dialBeginEvent.getChannel()));
-                Device dB = provider.findDeviceById(channelToDeviceId(dialBeginEvent.getDestChannel()));
-                Connection outgoingConnection = provider.getConnectionByUniqueId(dialBeginEvent.getDestUniqueId());
-
-                if(dB.getCategory().equals(DeviceCategory.NetworkInterface)) {
-                    outgoingConnection.setPresentation(dialBeginEvent.getConnectedLineNum());
-                }
-
-                if(dA != null) {
-                    provider.originated(
-                            dA,
-                            provider.getConnectionByUniqueId(dialBeginEvent.getUniqueId()),
-                            channelToDeviceId(dialBeginEvent.getDestChannel()),
-                            outgoingConnection.getPresentation().length() > 0 ? outgoingConnection.getPresentation() : null
-                    );
-                    provider.getConnectionByUniqueId(dialBeginEvent.getUniqueId()).setConnectionState(ConnectionState.Connected);
-                }
-                break;
-            case "HangupRequestEvent":
-                HangupRequestEvent hangupRequestEvent = (HangupRequestEvent)event;
-                Device clearingDevice = provider.findDeviceById(channelToDeviceId(hangupRequestEvent.getChannel()));
-                Connection clearedConnection = provider.getConnectionByUniqueId(hangupRequestEvent.getUniqueId());
-
-                if(clearedConnection != null) {
-                    Call clearedCall = provider.getCallByCallId(clearedConnection.getCallId());
-                    if(clearedCall != null) {
-                        Iterator<Connection> clearedConnections = clearedCall.getConnections().iterator();
-                        while (clearedConnections.hasNext()) {
-                            Connection con = clearedConnections.next();
-                            provider.connectionCleared(
-                                    provider.findDeviceById(con.getDeviceId()),
-                                    clearingDevice,
-                                    con
-                            );
-                            clearedConnections.remove();
-                            provider.removeConnection(con);
-                        }
-                        provider.removeCall(clearedCall);
-                    }
-                }
-                break;
-            case "HangupEvent":
-                HangupEvent hangupEvent = (HangupEvent)event;
-                Device hangupDevice = provider.findDeviceById(channelToDeviceId(hangupEvent.getChannel()));
-
-                if(provider.findDeviceById(hangupDevice.getDeviceId()).getCategory() == DeviceCategory.Station) {
-                    provider.findDeviceById(hangupDevice.getDeviceId()).setState(DeviceState.Idle);
-                }
-
-                break;
-            case "HoldEvent":
-                HoldEvent holdEvent = (HoldEvent)event;
-                Device holdDevice = provider.findDeviceById(channelToDeviceId(holdEvent.getChannel()));
-                Connection holdConnection = provider.getConnectionByUniqueId(holdEvent.getUniqueId());
-                if(holdEvent.getStatus()) {
-                    provider.held(holdDevice, holdConnection);
-                    holdConnection.setConnectionState(ConnectionState.Hold);
-                } else {
-                    provider.retrieved(holdDevice, holdConnection);
-                    holdConnection.setConnectionState(ConnectionState.Connected);
-                }
-
+                handleEvent((DialBeginEvent)event);
                 break;
             case "NewChannelEvent":
-                NewChannelEvent newChannelEvent = (NewChannelEvent)event;
-                Device newChannelDevice = provider.findDeviceById(channelToDeviceId(newChannelEvent.getChannel()));
-
-                if(provider.findDeviceById(newChannelDevice.getDeviceId()).getCategory() == DeviceCategory.Station) {
-                    provider.findDeviceById(newChannelDevice.getDeviceId()).setState(DeviceState.fromString(newChannelEvent.getChannelStateDesc()));
-                }
-
-                Connection newChannelConnection = provider.newConnection(channelToDeviceId(newChannelEvent.getChannel()), newChannelEvent.getUniqueId());
-                if(newChannelDevice.getCategory().equals(DeviceCategory.NetworkInterface)) {
-                    newChannelConnection.setPresentation(newChannelEvent.getCallerIdNum());
-                }
-
+                handleEvent((NewChannelEvent)event);
                 break;
             case "MasqueradeEvent":
-                MasqueradeEvent masqueradeEvent = (MasqueradeEvent)event;
-                //This is a direct Pick-Up
-                if(masqueradeEvent.getOriginalStateDesc().equals("Ringing") &&
-                                masqueradeEvent.getCloneStateDesc().equals("Up")
-                        ) {
-                    Device original = provider.findDeviceById(channelToDeviceId(masqueradeEvent.getOriginal()));
-                    Device clone = provider.findDeviceById(channelToDeviceId(masqueradeEvent.getClone()));
-                    List<Connection> originalConnections = provider.findConnectionsForDevice(original);
-                    List<Connection> offeredConnections = originalConnections.stream().filter(origCon -> origCon.getConnectionState() != ConnectionState.Connected).collect(Collectors.toList());
-
-                    List<Connection> cloneConnections = provider.findConnectionsForDevice(clone);
-
-                    if(offeredConnections.size() > 0 && cloneConnections.size() > 0) {
-                        Connection originalConnection = offeredConnections.get(0);
-
-                        Call incomingCall = provider.getCallByCallId(originalConnection.getCallId());
-
-                        Log.d(TAG, "Pick-Up: " + clone + " is picking up " + originalConnection);
-                        provider.connectionCleared(original, original, originalConnection);
-                        incomingCall.getConnections().remove(originalConnection);
-                        provider.removeConnection(originalConnection);
-
-                        Connection cloneConnection = cloneConnections.get(0);
-                        List<Connection> incomingConnections = incomingCall.getConnections();
-
-                        if(incomingConnections.size() > 0) {
-                            //There should only be one connection left in this call
-                            Connection incomingConnection = incomingConnections.get(0);
-                            //Add the picking-up connection to this call
-                            cloneConnection.setCallId(originalConnection.getCallId());
-                            incomingCall.addConnection(cloneConnection);
-
-                            provider.established(
-                                    provider.findDeviceById(incomingConnection.getDeviceId()),
-                                    original,
-                                    clone,
-                                    cloneConnection,
-                                    incomingConnection.getPresentation().length() > 0 ? incomingConnection.getPresentation() : null,
-                                    cloneConnection.getPresentation().length() > 0 ? cloneConnection.getPresentation() : null,
-                                    cloneConnection.getPresentation().length() > 0 ? cloneConnection.getPresentation() : null
-                            );
-                        } else {
-                            Log.e(TAG, "There is no connection left in the call.");
-                        }
-
-                    } else {
-                        Log.w(TAG, "There are no half-open connections to Pick-Up. Or the picking-up device has no connection.");
-                    }
-                }
-
+                handleEvent((MasqueradeEvent)event);
+                break;
+            case "HoldEvent":
+                handleEvent((HoldEvent)event);
+                break;
+            case "HangupEvent":
+                handleEvent((HangupEvent)event);
+                break;
+            case "HangupRequestEvent":
+                handleEvent((HangupRequestEvent)event);
                 break;
             default:
                 break;
         }
     }
+
+    private void handleEvent(PeerEntryEvent peerEntryEvent) {
+        if(peerEntryEvent.getDynamic()) {
+            SIPPhone d = new SIPPhone(peerEntryEvent.getObjectName(), peerEntryEvent.getIpAddress(), peerEntryEvent.getIpPort());
+            if (peerEntryEvent.getStatus() != null && peerEntryEvent.getStatus().contains("OK")) {
+                d.setState(DeviceState.Idle);
+            } else if (peerEntryEvent.getStatus().contains("UNKNOWN")) {
+                d.setState(DeviceState.Unknown);
+            } else if (peerEntryEvent.getStatus().contains("UNREACHABLE")) {
+                d.setState(DeviceState.Unavailable);
+            } else {
+                d.setState(DeviceState.Unknown);
+            }
+            provider.addDevice(d);
+        } else {
+            Device d = new Device(peerEntryEvent.getObjectName());
+            d.setCategory(DeviceCategory.NetworkInterface);
+            d.setState(DeviceState.Idle);
+            provider.addDevice(d);
+        }
+    }
+
+
+    private void handleEvent(EndpointListEvent endpointListEvent) {
+        if(endpointListEvent.getAuths() != null) {
+            SIPPhone d = new SIPPhone(endpointListEvent.getObjectName(), endpointListEvent.getIpAddress(), endpointListEvent.getIpPort());
+            if(endpointListEvent.getDeviceState() != null && endpointListEvent.getDeviceState().contains("Not in use")) {
+                d.setState(DeviceState.Idle);
+            } else if(endpointListEvent.getDeviceState().contains("In use")) {
+                d.setState(DeviceState.InUse);
+            } else if(endpointListEvent.getDeviceState().contains("Unavailable")) {
+                d.setState(DeviceState.Unavailable);
+            } else {
+                d.setState(DeviceState.Unknown);
+            }
+            provider.addDevice(d);
+        } else {
+            Device d = new Device(endpointListEvent.getObjectName());
+            d.setCategory(DeviceCategory.NetworkInterface);
+            d.setState(DeviceState.Idle);
+            provider.addDevice(d);
+        }
+    }
+
+    private void handleEvent(PeerStatusEvent peerStatusEvent) {
+        Device d = provider.findDeviceById(peerToDeviceId(peerStatusEvent.getPeer()));
+        if(d != null) {
+            if (peerStatusEvent.getPeerStatus().equals("Registered")) {
+                if (d.getState().equals(DeviceState.Unavailable)) {
+                    provider.backInService(d);
+                }
+                d.setState(DeviceState.Idle);
+            } else if (peerStatusEvent.getPeerStatus().equals("Unregistered")) {
+                if (!d.getState().equals(DeviceState.Unavailable)) {
+                    provider.outOfService(d);
+                }
+                d.setState(DeviceState.Unavailable);
+            }
+        }
+    }
+
+    private void handleEvent(NewStateEvent newStateEvent) {
+        Connection c = provider.getConnectionByUniqueId(newStateEvent.getUniqueId());
+        Call call = provider.getCallByCallId(c.getCallId());
+
+
+        Device caller = null;
+
+        if(c != null) {
+            if(provider.findDeviceById(c.getDeviceId()).getCategory() == DeviceCategory.Station) {
+                provider.findDeviceById(c.getDeviceId()).setState(DeviceState.fromString(newStateEvent.getChannelStateDesc()));
+            }
+
+            switch(newStateEvent.getChannelStateDesc()) {
+                case "Ringing":
+                    if(call == null) {
+                        //There has to be a call this device is participating in
+                        Iterator<Call> allCalls = provider.getCalls().iterator();
+                        while(allCalls.hasNext()) {
+                            Call callToCheck = allCalls.next();
+                            if(callToCheck.getConnections().stream().filter(checkedCon -> checkedCon.getDeviceId().toString().equals(channelToDeviceId(newStateEvent.getChannel()).toString())).count() > 0) {
+                                call = callToCheck;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(call != null) {
+                        //Is there a connection already connected to this call?
+                        if (call.getConnections().stream().filter(con -> con.getConnectionState().equals(ConnectionState.Connected)).count() > 0) {
+                            Connection conA = call.getConnections().stream().filter(con -> con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
+                            Connection conB = call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
+                            Device callee = provider.findDeviceById(channelToDeviceId(newStateEvent.getChannel()));
+                            caller = provider.findDeviceById(conA.getDeviceId());
+                            String conAPresentation = conA.getPresentation().length() > 0 ? conA.getPresentation() : null;
+                            String conBPresentation = conB.getPresentation().length() > 0 ? conB.getPresentation() : null;
+
+                            provider.delivered(caller, provider.findDeviceById(callee.getDeviceId()), conA, conAPresentation, conBPresentation);
+                            provider.offered(caller, provider.findDeviceById(callee.getDeviceId()), conB, conAPresentation, conBPresentation);
+                            provider.delivered(caller, provider.findDeviceById(callee.getDeviceId()), conB, conAPresentation, conBPresentation);
+                        }
+
+
+                    }
+                    break;
+                case "Up":
+                    if(call != null) {
+                        //Is this an Accept scenario? One-Call should be in connected, one in any other state
+                        if (call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).count() > 0 &&
+                                call.getConnections().stream().filter(con -> con.getConnectionState().equals(ConnectionState.Connected)).count() > 0) {
+                            Connection callee = call.getConnections().stream().filter(con -> !con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
+                            Connection callingConnection = call.getConnections().stream().filter(con -> con.getConnectionState().equals(ConnectionState.Connected)).findFirst().get();
+                            Device callingDevice = provider.findDeviceById(callingConnection.getDeviceId());
+                            String callingConnectionPresentation = callingConnection.getPresentation().length() > 0 ? callingConnection.getPresentation() : null;
+                            String calleePresentation = callee.getPresentation().length() > 0 ? callee.getPresentation() : null;
+                            provider.established(callingDevice, provider.findDeviceById(callee.getDeviceId()), provider.findDeviceById(callee.getDeviceId()), callingConnection, callingConnectionPresentation, calleePresentation, calleePresentation);
+                            callee.setConnectionState(ConnectionState.Connected);
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    private void handleEvent(DialEvent dialEvent) {
+        if(getChannelType(dialEvent.getChannel()).equals("Local"))
+            return;
+
+        if(dialEvent.getSubEvent().equals(DialEvent.SUBEVENT_BEGIN)) {
+            provider.associateConnections(dialEvent.getUniqueId(), dialEvent.getDestUniqueId());
+
+            //Originating Device
+            Device dA = provider.findDeviceById(channelToDeviceId(dialEvent.getChannel()));
+            Device dB = provider.findDeviceById(channelToDeviceId(dialEvent.getDestination()));
+            Connection outgoingConnection = provider.getConnectionByUniqueId(dialEvent.getDestUniqueId());
+
+            if(dB.getCategory().equals(DeviceCategory.NetworkInterface)) {
+                outgoingConnection.setPresentation(dialEvent.getConnectedlinenum());
+            }
+
+            if(dA != null) {
+                provider.originated(
+                        dA,
+                        provider.getConnectionByUniqueId(dialEvent.getUniqueId()),
+                        channelToDeviceId(dialEvent.getDestination()),
+                        outgoingConnection.getPresentation().length() > 0 ? outgoingConnection.getPresentation() : null
+                );
+                provider.getConnectionByUniqueId(dialEvent.getUniqueId()).setConnectionState(ConnectionState.Connected);
+            }
+
+            //Destination Device
+
+
+        } else {
+            //Dialstatus is available (reason)
+        }
+    }
+
+    private void handleEvent(NewCallerIdEvent newCallerIdEvent) {
+        Connection newCallerIdConnection = provider.getConnectionByUniqueId(newCallerIdEvent.getUniqueId());
+        if(newCallerIdConnection != null) {
+            Device newCallerIdDevice = provider.findDeviceById(newCallerIdConnection.getDeviceId());
+            if(newCallerIdDevice != null && newCallerIdDevice.getCategory().equals(DeviceCategory.NetworkInterface)) {
+                newCallerIdConnection.setPresentation(newCallerIdEvent.getCallerIdNum());
+                Log.d(TAG, "Set new presentation for Connection " + newCallerIdConnection.toString() + ": " + newCallerIdEvent.getCallerIdNum());
+            }
+        }
+    }
+
+    private void handleEvent(DialBeginEvent dialBeginEvent) {
+        if(getChannelType(dialBeginEvent.getChannel()).equals("Local"))
+            return;
+
+        provider.associateConnections(dialBeginEvent.getUniqueId(), dialBeginEvent.getDestUniqueId());
+
+        //Originating Device
+        Device dA = provider.findDeviceById(channelToDeviceId(dialBeginEvent.getChannel()));
+        Device dB = provider.findDeviceById(channelToDeviceId(dialBeginEvent.getDestChannel()));
+        Connection outgoingConnection = provider.getConnectionByUniqueId(dialBeginEvent.getDestUniqueId());
+
+        if(dB.getCategory().equals(DeviceCategory.NetworkInterface)) {
+            outgoingConnection.setPresentation(dialBeginEvent.getConnectedLineNum());
+        }
+
+        if(dA != null) {
+            provider.originated(
+                    dA,
+                    provider.getConnectionByUniqueId(dialBeginEvent.getUniqueId()),
+                    channelToDeviceId(dialBeginEvent.getDestChannel()),
+                    outgoingConnection.getPresentation().length() > 0 ? outgoingConnection.getPresentation() : null
+            );
+            provider.getConnectionByUniqueId(dialBeginEvent.getUniqueId()).setConnectionState(ConnectionState.Connected);
+        }
+    }
+
+    private void handleEvent(NewChannelEvent newChannelEvent) {
+        Device newChannelDevice = provider.findDeviceById(channelToDeviceId(newChannelEvent.getChannel()));
+
+        if(provider.findDeviceById(newChannelDevice.getDeviceId()).getCategory() == DeviceCategory.Station) {
+            provider.findDeviceById(newChannelDevice.getDeviceId()).setState(DeviceState.fromString(newChannelEvent.getChannelStateDesc()));
+        }
+
+        Connection newChannelConnection = provider.newConnection(channelToDeviceId(newChannelEvent.getChannel()), newChannelEvent.getUniqueId());
+        if(newChannelDevice.getCategory().equals(DeviceCategory.NetworkInterface)) {
+            newChannelConnection.setPresentation(newChannelEvent.getCallerIdNum());
+        }
+    }
+
+    private void handleEvent(MasqueradeEvent masqueradeEvent) {
+        if(masqueradeEvent.getOriginalStateDesc().equals("Ringing") && masqueradeEvent.getCloneStateDesc().equals("Up")) {
+            Device original = provider.findDeviceById(channelToDeviceId(masqueradeEvent.getOriginal()));
+            Device clone = provider.findDeviceById(channelToDeviceId(masqueradeEvent.getClone()));
+            List<Connection> originalConnections = provider.findConnectionsForDevice(original);
+            List<Connection> offeredConnections = originalConnections.stream().filter(origCon -> origCon.getConnectionState() != ConnectionState.Connected).collect(Collectors.toList());
+
+            List<Connection> cloneConnections = provider.findConnectionsForDevice(clone);
+
+            if(offeredConnections.size() > 0 && cloneConnections.size() > 0) {
+                Connection originalConnection = offeredConnections.get(0);
+
+                Call incomingCall = provider.getCallByCallId(originalConnection.getCallId());
+
+                Log.d(TAG, "Pick-Up: " + clone + " is picking up " + originalConnection);
+                provider.connectionCleared(original, original, originalConnection);
+                incomingCall.getConnections().remove(originalConnection);
+                provider.removeConnection(originalConnection);
+
+                Connection cloneConnection = cloneConnections.get(0);
+                List<Connection> incomingConnections = incomingCall.getConnections();
+
+                if(incomingConnections.size() > 0) {
+                    //There should only be one connection left in this call
+                    Connection incomingConnection = incomingConnections.get(0);
+                    //Add the picking-up connection to this call
+                    cloneConnection.setCallId(originalConnection.getCallId());
+                    incomingCall.addConnection(cloneConnection);
+
+                    provider.established(
+                            provider.findDeviceById(incomingConnection.getDeviceId()),
+                            original,
+                            clone,
+                            cloneConnection,
+                            incomingConnection.getPresentation().length() > 0 ? incomingConnection.getPresentation() : null,
+                            cloneConnection.getPresentation().length() > 0 ? cloneConnection.getPresentation() : null,
+                            cloneConnection.getPresentation().length() > 0 ? cloneConnection.getPresentation() : null
+                    );
+                } else {
+                    Log.e(TAG, "There is no connection left in the call.");
+                }
+            } else {
+                Log.w(TAG, "There are no half-open connections to Pick-Up. Or the picking-up device has no connection.");
+            }
+        }
+    }
+
+    private void handleEvent(HoldEvent holdEvent) {
+        Device holdDevice = provider.findDeviceById(channelToDeviceId(holdEvent.getChannel()));
+        Connection holdConnection = provider.getConnectionByUniqueId(holdEvent.getUniqueId());
+        if(holdEvent.getStatus()) {
+            provider.held(holdDevice, holdConnection);
+            holdConnection.setConnectionState(ConnectionState.Hold);
+        } else {
+            provider.retrieved(holdDevice, holdConnection);
+            holdConnection.setConnectionState(ConnectionState.Connected);
+        }
+    }
+
+    private void handleEvent(HangupEvent hangupEvent) {
+        Device hangupDevice = provider.findDeviceById(channelToDeviceId(hangupEvent.getChannel()));
+
+        if(provider.findDeviceById(hangupDevice.getDeviceId()).getCategory() == DeviceCategory.Station) {
+            provider.findDeviceById(hangupDevice.getDeviceId()).setState(DeviceState.Idle);
+        }
+    }
+
+    private void handleEvent(HangupRequestEvent hangupRequestEvent) {
+        Device clearingDevice = provider.findDeviceById(channelToDeviceId(hangupRequestEvent.getChannel()));
+        Connection clearedConnection = provider.getConnectionByUniqueId(hangupRequestEvent.getUniqueId());
+
+        if(clearedConnection != null) {
+            Call clearedCall = provider.getCallByCallId(clearedConnection.getCallId());
+            if(clearedCall != null) {
+                Iterator<Connection> clearedConnections = clearedCall.getConnections().iterator();
+                while (clearedConnections.hasNext()) {
+                    Connection con = clearedConnections.next();
+                    provider.connectionCleared(
+                            provider.findDeviceById(con.getDeviceId()),
+                            clearingDevice,
+                            con
+                    );
+                    clearedConnections.remove();
+                    provider.removeConnection(con);
+                }
+                provider.removeCall(clearedCall);
+            }
+        }
+    }
+
 
     private String getChannelType(String channel) {
         return channel.split("/")[0];
