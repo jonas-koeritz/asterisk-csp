@@ -7,7 +7,7 @@ import opencsp.csta.messages.*;
 import opencsp.csta.types.*;
 import opencsp.csta.xml.CSTAXmlEncoder;
 import opencsp.csta.xml.CSTAXmlSerializable;
-import opencsp.tcp.CSTATcpMessage;
+import opencsp.csta.tcp.CSTATcpMessage;
 
 import java.util.*;
 import java.util.stream.Collectors;

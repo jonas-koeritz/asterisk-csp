@@ -91,45 +91,49 @@ public class Asterisk implements ManagerEventListener {
 
 
 
-        switch(eventClass) {
-            case "PeerEntryEvent":
-                handleEvent((PeerEntryEvent)event);
-                break;
-            case "EndpointListEvent":
-                handleEvent((EndpointListEvent)event);
-                break;
-            case "PeerStatusEvent":
-                handleEvent((PeerStatusEvent)event);
-                break;
-            case "NewStateEvent":
-                handleEvent((NewStateEvent)event);
-                break;
-            case "DialEvent":
-                handleEvent((DialEvent)event);
-                break;
-            case "NewCallerIdEvent":
-                handleEvent((NewCallerIdEvent)event);
-                break;
-            case "DialBeginEvent":
-                handleEvent((DialBeginEvent)event);
-                break;
-            case "NewChannelEvent":
-                handleEvent((NewChannelEvent)event);
-                break;
-            case "MasqueradeEvent":
-                handleEvent((MasqueradeEvent)event);
-                break;
-            case "HoldEvent":
-                handleEvent((HoldEvent)event);
-                break;
-            case "HangupEvent":
-                handleEvent((HangupEvent)event);
-                break;
-            case "HangupRequestEvent":
-                handleEvent((HangupRequestEvent)event);
-                break;
-            default:
-                break;
+        try {
+            switch (eventClass) {
+                case "PeerEntryEvent":
+                    handleEvent((PeerEntryEvent) event);
+                    break;
+                case "EndpointListEvent":
+                    handleEvent((EndpointListEvent) event);
+                    break;
+                case "PeerStatusEvent":
+                    handleEvent((PeerStatusEvent) event);
+                    break;
+                case "NewStateEvent":
+                    handleEvent((NewStateEvent) event);
+                    break;
+                case "DialEvent":
+                    handleEvent((DialEvent) event);
+                    break;
+                case "NewCallerIdEvent":
+                    handleEvent((NewCallerIdEvent) event);
+                    break;
+                case "DialBeginEvent":
+                    handleEvent((DialBeginEvent) event);
+                    break;
+                case "NewChannelEvent":
+                    handleEvent((NewChannelEvent) event);
+                    break;
+                case "MasqueradeEvent":
+                    handleEvent((MasqueradeEvent) event);
+                    break;
+                case "HoldEvent":
+                    handleEvent((HoldEvent) event);
+                    break;
+                case "HangupEvent":
+                    handleEvent((HangupEvent) event);
+                    break;
+                case "HangupRequestEvent":
+                    handleEvent((HangupRequestEvent) event);
+                    break;
+                default:
+                    break;
+            }
+        } catch (ClassCastException ex) {
+            Log.e(TAG, ex.getMessage());
         }
     }
 
@@ -302,7 +306,9 @@ public class Asterisk implements ManagerEventListener {
     }
 
     private void handleEvent(DialBeginEvent dialBeginEvent) {
-        if(getChannelType(dialBeginEvent.getChannel()).equals("Local"))
+        //Ignore local or CTI calls (source channel is null)
+        String channelType = getChannelType(dialBeginEvent.getChannel());
+        if(channelType.equals("Local") || channelType.equals("Null"))
             return;
 
         provider.associateConnections(dialBeginEvent.getUniqueId(), dialBeginEvent.getDestUniqueId());
@@ -432,7 +438,11 @@ public class Asterisk implements ManagerEventListener {
 
 
     private String getChannelType(String channel) {
-        return channel.split("/")[0];
+        if(channel != null) {
+            return channel.split("/")[0];
+        } else {
+            return "Null";
+        }
     }
 
     private DeviceId channelToDeviceId(String channel) {

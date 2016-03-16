@@ -1,6 +1,5 @@
-package opencsp.tcp;
+package opencsp.csta.tcp;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 import opencsp.Log;
