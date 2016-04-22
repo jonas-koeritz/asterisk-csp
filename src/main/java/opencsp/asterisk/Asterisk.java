@@ -123,6 +123,9 @@ public class Asterisk implements ManagerEventListener {
                 case "HoldEvent":
                     handleEvent((HoldEvent) event);
                     break;
+                case "UnholdEvent":
+                    handleEvent((UnholdEvent)event);
+                    break;
                 case "HangupEvent":
                     handleEvent((HangupEvent) event);
                     break;
@@ -404,6 +407,19 @@ public class Asterisk implements ManagerEventListener {
             holdConnection.setConnectionState(ConnectionState.Connected);
         }
     }
+
+    private void handleEvent(UnholdEvent holdEvent) {
+        Device holdDevice = provider.findDeviceById(channelToDeviceId(holdEvent.getChannel()));
+        Connection holdConnection = provider.getConnectionByUniqueId(holdEvent.getUniqueId());
+        if(holdEvent.getStatus()) {
+            provider.held(holdDevice, holdConnection);
+            holdConnection.setConnectionState(ConnectionState.Hold);
+        } else {
+            provider.retrieved(holdDevice, holdConnection);
+            holdConnection.setConnectionState(ConnectionState.Connected);
+        }
+    }
+
 
     private void handleEvent(HangupEvent hangupEvent) {
         Device hangupDevice = provider.findDeviceById(channelToDeviceId(hangupEvent.getChannel()));
