@@ -8,6 +8,7 @@ import opencsp.csta.types.*;
 import opencsp.csta.xml.CSTAXmlEncoder;
 import opencsp.csta.xml.CSTAXmlSerializable;
 import opencsp.csta.tcp.CSTATcpMessage;
+import opencsp.uacsta.UaCSTAProvider;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,9 +31,14 @@ public class Provider {
     private static Provider instance;
 
     private Asterisk asteriskServer;
+    private UaCSTAProvider uaCSTAProvider;
 
     public void setAsterisk(Asterisk asterisk) {
         this.asteriskServer = asterisk;
+    }
+
+    public void setUaCstaProvider(UaCSTAProvider uaCSTAProvider) {
+        this.uaCSTAProvider = uaCSTAProvider;
     }
 
     private Provider(String countryCode, String areaCode, String systemPrefix) {
@@ -182,6 +188,10 @@ public class Provider {
             case "SetForwarding":
                 setForwarding((SetForwarding)message, invokeId, session);
                 break;
+            case "MakeCall":
+                MakeCall mMakeCall = (MakeCall)message;
+                response = makeCall(mMakeCall);
+                break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
                 break;
@@ -196,6 +206,8 @@ public class Provider {
             clientChannel.close();
         }
     }
+
+
 
     private void setForwarding(SetForwarding setfwd, int invokeId, CSTASession session) {
         asteriskServer.putAsteriskDatabaseValue(setfwd.getDevice().toString(), setfwd.getForwardingType().toString(), setfwd.getActivate() ? setfwd.getDN() : "");
@@ -276,6 +288,13 @@ public class Provider {
             return new MonitorStartResponse(m.getCrossReferenceId());
         }
         return null;
+    }
+
+    private MakeCallResponse makeCall(MakeCall makeCall) {
+        Connection c = newConnection(makeCall.getCallingDevice(), "");
+        c.setConnectionState(ConnectionState.Initiated);
+        addCall(c.getCallId(), c);
+        return new MakeCallResponse(c);
     }
 
     private MonitorStopResponse monitorStop(MonitorStop stop, CSTASession session) {
@@ -439,10 +458,31 @@ public class Provider {
     }
 
     public Connection newConnection(DeviceId deviceId, String uniqueId) {
-        Connection c = new Connection(lastCallId++, deviceId, uniqueId);
-        Log.d(TAG, "Created new connection: " + c.toString());
-        connections.add(c);
-        return c;
+        //If this is a station, find any half open calls for this device
+        Device device = findDeviceById(deviceId);
+        if(device.getCategory() == DeviceCategory.Station) {
+            List<Connection> availableConnections = findConnectionsForDevice(device);
+            Connection halfOpenConnection = null;
+            if(availableConnections.stream().filter(c -> c.getUniqueId().equals("")).count() > 0) {
+                halfOpenConnection = availableConnections.stream().filter(c -> c.getUniqueId().equals("")).findFirst().get();
+            }
+
+            if(halfOpenConnection != null) {
+                halfOpenConnection.setUniqueId(uniqueId);
+                Log.d(TAG, "Associated connection to uniqueId " + uniqueId);
+                return halfOpenConnection;
+            } else {
+                Connection c = new Connection(lastCallId++, deviceId, uniqueId);
+                Log.d(TAG, "Created new connection: " + c.toString());
+                connections.add(c);
+                return c;
+            }
+        } else {
+            Connection c = new Connection(lastCallId++, deviceId, uniqueId);
+            Log.d(TAG, "Created new connection: " + c.toString());
+            connections.add(c);
+            return c;
+        }
     }
 
     public void originated(Device d, Connection con, DeviceId calledDevice, String calledDevicePresentation) {

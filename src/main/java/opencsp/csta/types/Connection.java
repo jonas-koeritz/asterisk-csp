@@ -18,6 +18,10 @@ public class Connection implements CSTAXmlSerializable {
         this.presentation = "";
     }
 
+    public void setUniqueId(String uniqueId) {
+        this.uniqueId = uniqueId;
+    }
+
     public void setPresentation(String presentation) {
         this.presentation = presentation;
     }

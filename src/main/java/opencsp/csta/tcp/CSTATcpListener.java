@@ -23,7 +23,7 @@ public class CSTATcpListener {
         this.provider = provider;
     }
 
-    public void run() {
+    public void startListening() {
         Log.i(TAG, "Starting CSTA Listener on Port " + port);
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
