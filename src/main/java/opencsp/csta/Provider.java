@@ -29,6 +29,7 @@ public class Provider {
     private String countryCode;
     private String areaCode;
     private String systemPrefix;
+    private String localIp;
 
     private int lastCstaSessionId = 0;
     private int lastCallId = 0;
@@ -50,6 +51,7 @@ public class Provider {
         this.countryCode = config.getConfigurationValue("country_code");
         this.areaCode = config.getConfigurationValue("area_code");
         this.systemPrefix = config.getConfigurationValue("system_prefix");
+
         this.config = config;
         sessionManager = new CSTASessionManager();
         devices = new ArrayList<Device>();
@@ -207,6 +209,10 @@ public class Provider {
                 MakeCall mMakeCall = (MakeCall)message;
                 response = makeCall(mMakeCall);
                 break;
+            case "ClearConnection":
+                ClearConnection mClearConnection = (ClearConnection)message;
+                response = clearConnection(mClearConnection);
+                break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
                 break;
@@ -309,7 +315,41 @@ public class Provider {
         Connection c = newConnection(makeCall.getCallingDevice(), "");
         c.setConnectionState(ConnectionState.Initiated);
         addCall(c.getCallId(), c);
+        UAController ua = getUaControllerForDevice(makeCall.getCallingDevice().toString());
+        if(ua != null) {
+            Log.d(TAG, "UAController.makeCall()");
+            ua.makeCall(makeCall.getCalledDirectoryNumber().toString());
+        } else {
+            Log.d(TAG, "No UAController available for deviceID=" + makeCall.getCallingDevice().toString());
+        }
         return new MakeCallResponse(c);
+    }
+
+    private ClearConnectionResponse clearConnection(ClearConnection clearConnection) {
+        Device device = findDeviceById(clearConnection.getConnectionToBeCleared().getDeviceId());
+        Call callToBeCleared = findCallForConnection(clearConnection.getConnectionToBeCleared());
+        if(callToBeCleared != null) {
+            Iterator<Connection> clearedConnections = callToBeCleared.getConnections().iterator();
+            while (clearedConnections.hasNext()) {
+                Connection con = clearedConnections.next();
+                connectionCleared(
+                        findDeviceById(con.getDeviceId()),
+                        device,
+                        con
+                );
+                clearedConnections.remove();
+                removeConnection(con);
+            }
+            removeCall(callToBeCleared);
+        }
+        UAController ua = getUaControllerForDevice(device.getDeviceId().toString());
+        if(ua != null) {
+            Log.d(TAG, "UAController.clearConnection()");
+            ua.clearConnection();
+        } else {
+            Log.d(TAG, "No UAController available for deviceID=" + device.getDeviceId().toString());
+        }
+        return new ClearConnectionResponse();
     }
 
     private MonitorStopResponse monitorStop(MonitorStop stop, CSTASession session) {
@@ -331,13 +371,13 @@ public class Provider {
             devices.add(d);
             if(d.getClass().equals(SIPPhone.class)) {
                 SIPPhone phone = (SIPPhone)d;
-                String deviceId = config.getConfigurationValue(d.getDeviceId().toString());
-                switch(deviceId) {
+                String deviceType = config.getConfigurationValue(d.getDeviceId().toString());
+                switch(deviceType) {
                     case UaCSTAController.TYPE:
-                        uaControllers.put(deviceId, new UaCSTAController(phone));
+                        uaControllers.put(d.getDeviceId().toString(), new UaCSTAController(phone, config));
                         break;
                     default:
-                        Log.d(TAG, "No appropriate UAController for device " + deviceId);
+                        Log.d(TAG, "No appropriate UAController for device " + d.getDeviceId().toString());
                         break;
                 }
             }

@@ -18,4 +18,12 @@ public class SIPPhone extends Device {
     public String toString() {
         return "[SIPPhone deviceId=" + deviceId + ", state=" + state + ", ipAddress=" + ipAddress + ", port=" + port + "]";
     }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public int getPort() {
+        return port;
+    }
 }
