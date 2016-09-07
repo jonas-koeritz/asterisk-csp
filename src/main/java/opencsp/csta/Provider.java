@@ -270,6 +270,10 @@ public class Provider {
                 ConsultationCall mConsultationCall = (ConsultationCall)message;
                 response = consultationCall(mConsultationCall);
                 break;
+            case "AnswerCall":
+                AnswerCall mAnswerCall = (AnswerCall)message;
+                response = answerCall(mAnswerCall);
+                break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
                 break;
@@ -396,6 +400,19 @@ public class Provider {
             Log.d(TAG, "No UAController available for deviceID=" + consultationCall.getExistingCall().getDeviceId().toString());
         }
         return new ConsultationCallResponse(c);
+    }
+
+    private AnswerCallResponse answerCall(AnswerCall answerCall) {
+        Device device = findDeviceById(answerCall.getCallToBeAnswered().getDeviceId());
+
+        UAController ua = getUaControllerForDevice(device.getDeviceId().toString());
+        if(ua != null) {
+            Log.d(TAG, "UAController.answerCall()");
+            ua.answerCall();
+        } else {
+            Log.d(TAG, "No UAController available for deviceID=" + device.getDeviceId().toString());
+        }
+        return new AnswerCallResponse();
     }
 
     private ClearConnectionResponse clearConnection(ClearConnection clearConnection) {
