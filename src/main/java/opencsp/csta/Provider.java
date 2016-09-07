@@ -213,6 +213,14 @@ public class Provider {
                 ClearConnection mClearConnection = (ClearConnection)message;
                 response = clearConnection(mClearConnection);
                 break;
+            case "HoldCall":
+                HoldCall mHoldCall = (HoldCall)message;
+                response = holdCall(mHoldCall);
+                break;
+            case "RetrieveCall":
+                RetrieveCall mRetrieveCall = (RetrieveCall)message;
+                response = retrieveCall(mRetrieveCall);
+                break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
                 break;
@@ -350,6 +358,35 @@ public class Provider {
             Log.d(TAG, "No UAController available for deviceID=" + device.getDeviceId().toString());
         }
         return new ClearConnectionResponse();
+    }
+
+    private HoldCallResponse holdCall(HoldCall holdCall) {
+        Device device = findDeviceById(holdCall.getCallToBeHeld().getDeviceId());
+        held(device, holdCall.getCallToBeHeld());
+
+        UAController ua = getUaControllerForDevice(device.getDeviceId().toString());
+        if(ua != null) {
+            Log.d(TAG, "UAController.holdCall()");
+            ua.holdCall();
+        } else {
+            Log.d(TAG, "No UAController available for deviceID=" + device.getDeviceId().toString());
+        }
+        return new HoldCallResponse();
+    }
+
+    private RetrieveCallResponse retrieveCall(RetrieveCall retrieveCall) {
+        Device device = findDeviceById(retrieveCall.getCallToBeRetrieved().getDeviceId());
+
+        retrieved(device, retrieveCall.getCallToBeRetrieved());
+
+        UAController ua = getUaControllerForDevice(device.getDeviceId().toString());
+        if(ua != null) {
+            Log.d(TAG, "UAController.retrieveCall()");
+            ua.retrieveCall();
+        } else {
+            Log.d(TAG, "No UAController available for deviceID=" + device.getDeviceId().toString());
+        }
+        return new RetrieveCallResponse();
     }
 
     private MonitorStopResponse monitorStop(MonitorStop stop, CSTASession session) {
