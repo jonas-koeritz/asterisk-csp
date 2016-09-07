@@ -8,6 +8,7 @@ import opencsp.csta.Provider;
 import opencsp.csta.tcp.CSTATcpListener;
 import opencsp.uacsta.UaCSTAListener;
 import opencsp.uacsta.UaCSTAProvider;
+import opencsp.util.ConfigurationProvider;
 import opencsp.wbm.Wbm;
 import org.slf4j.LoggerFactory;
 
@@ -21,13 +22,23 @@ public class Main {
         LoggerContext lc = (LoggerContext)LoggerFactory.getILoggerFactory();
         StatusPrinter.print(lc);
 
-        Provider cstaServiceProvider = Provider.getInstance("49", "4121", "2336");
+        ConfigurationProvider config = new ConfigurationProvider();
+
+        Provider cstaServiceProvider = Provider.getInstance(
+                config.getConfigurationValue("country_code"),
+                config.getConfigurationValue("area_code"),
+                config.getConfigurationValue("system_prefix"));
 
         Wbm wbm = new Wbm(8080, cstaServiceProvider);
         wbm.start();
 
         try {
-            Asterisk asterisk = new Asterisk("192.168.55.75", "cti", "cti", cstaServiceProvider);
+            Asterisk asterisk = new Asterisk(
+                    config.getConfigurationValue("asterisk_host"),
+                    config.getConfigurationValue("asterisk_user"),
+                    config.getConfigurationValue("asterisk_pass"),
+                    cstaServiceProvider);
+
             cstaServiceProvider.setAsterisk(asterisk);
         } catch (Exception ex) {
             Log.e(TAG, ex.getMessage());
@@ -43,19 +54,7 @@ public class Main {
         };
 
 
-        UaCSTAProvider uaCSTAProvider = new UaCSTAProvider();
-        UaCSTAListener uaCSTAListener = new UaCSTAListener(6060, uaCSTAProvider);
-        cstaServiceProvider.setUaCstaProvider(uaCSTAProvider);
-
-        Runnable uaCstaListenerThread = new Runnable() {
-            public void run() {
-                uaCSTAListener.startListening();
-                Log.d(TAG, "uaCstaListener returned.");
-            }
-        };
-
         ExecutorService listenerExecutor = Executors.newCachedThreadPool();
         listenerExecutor.submit(cstaListenerThread);
-        listenerExecutor.submit(uaCstaListenerThread);
     }
 }

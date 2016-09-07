@@ -8,7 +8,7 @@ import opencsp.csta.types.*;
 import opencsp.csta.xml.CSTAXmlEncoder;
 import opencsp.csta.xml.CSTAXmlSerializable;
 import opencsp.csta.tcp.CSTATcpMessage;
-import opencsp.uacsta.UaCSTAProvider;
+import opencsp.uacontroller.UAController;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,14 +31,14 @@ public class Provider {
     private static Provider instance;
 
     private Asterisk asteriskServer;
-    private UaCSTAProvider uaCSTAProvider;
+
+    /**
+     * UAControllers assigned to String deviceIds.
+     */
+    private HashMap<String,UAController> uaControllers;
 
     public void setAsterisk(Asterisk asterisk) {
         this.asteriskServer = asterisk;
-    }
-
-    public void setUaCstaProvider(UaCSTAProvider uaCSTAProvider) {
-        this.uaCSTAProvider = uaCSTAProvider;
     }
 
     private Provider(String countryCode, String areaCode, String systemPrefix) {
@@ -49,6 +49,7 @@ public class Provider {
         devices = new ArrayList<Device>();
         connections = new ArrayList<Connection>();
         calls = new ArrayList<Call>();
+        uaControllers = new HashMap<String,UAController>();
     }
 
     public static Provider getInstance(String countryCode, String areaCode, String systemPrefix) {
@@ -56,6 +57,15 @@ public class Provider {
             instance = new Provider(countryCode, areaCode, systemPrefix);
         }
         return instance;
+    }
+
+    /**
+     * Get the controller associated with the specified device.
+     * @param deviceId The deviceId to look for
+     * @return The UAController implementation that will control the UA
+     */
+    private UAController getUaControllerForDevice(String deviceId) {
+        return uaControllers.get(deviceId);
     }
 
     public static Provider getExistingInstance() {
@@ -88,13 +98,12 @@ public class Provider {
      * @param callId the CallID to search for
      * @return List of Connections participating in the call
      */
-    public List<Connection> getConnectionsByCallId(int callId) {
+    private List<Connection> getConnectionsByCallId(int callId) {
         return connections
                 .stream()
                 .filter(c -> c.getCallId() == callId)
                 .collect(Collectors.toCollection(ArrayList::new));
     }
-
 
 
     /**
@@ -103,14 +112,14 @@ public class Provider {
      * @return The Call Object or null if no Call Object with the fiven callID was found
      */
     public Call getCallByCallId(int callId) {
-        if(calls.stream().filter(c -> c.getCallId() == callId).count() > 0) {
+        if(calls.stream().filter(c -> c.getCallId() == callId).findFirst().isPresent()) {
             return calls.stream().filter(c -> c.getCallId() == callId).findFirst().get();
         }
         return null;
     }
 
     public Call findCallForConnection(Connection con) {
-        if(calls.stream().filter(c -> c.getCallId() == con.getCallId()).count() > 0) {
+        if(calls.stream().filter(c -> c.getCallId() == con.getCallId()).findFirst().isPresent()) {
             return calls.stream().filter(c -> c.getCallId() == con.getCallId()).findFirst().get();
         }
         return null;
@@ -122,7 +131,7 @@ public class Provider {
 
 
 
-    public CSTAXmlSerializable startSession(StartApplicationSession message, Channel clientChannel) {
+    private CSTAXmlSerializable startSession(StartApplicationSession message, Channel clientChannel) {
         int sessionId = getCstaSessionId();
         sessionManager.newSession(
                 new CSTASession(sessionId,
@@ -331,7 +340,7 @@ public class Provider {
     }
 
     public Device findDeviceById(String deviceId) {
-        if(devices.stream().filter(d -> d.getDeviceId().toString().equals(deviceId)).count() > 0) {
+        if(devices.stream().filter(d -> d.getDeviceId().toString().equals(deviceId)).findFirst().isPresent()) {
             return devices.stream().filter(d -> d.getDeviceId().toString().equals(deviceId)).findFirst().get();
         } else {
             return null;
@@ -437,7 +446,7 @@ public class Provider {
     }
 
     public Connection getConnectionByUniqueId(String uniqueId) {
-        if(connections.stream().filter(c -> c.getUniqueId().equals(uniqueId)).count() > 0) {
+        if(connections.stream().filter(c -> c.getUniqueId().equals(uniqueId)).findFirst().isPresent()) {
             return connections.stream().filter(c -> c.getUniqueId().equals(uniqueId)).findFirst().get();
         }
         return null;
@@ -463,7 +472,7 @@ public class Provider {
         if(device.getCategory() == DeviceCategory.Station) {
             List<Connection> availableConnections = findConnectionsForDevice(device);
             Connection halfOpenConnection = null;
-            if(availableConnections.stream().filter(c -> c.getUniqueId().equals("")).count() > 0) {
+            if(availableConnections.stream().filter(c -> c.getUniqueId().equals("")).findFirst().isPresent()) {
                 halfOpenConnection = availableConnections.stream().filter(c -> c.getUniqueId().equals("")).findFirst().get();
             }
 

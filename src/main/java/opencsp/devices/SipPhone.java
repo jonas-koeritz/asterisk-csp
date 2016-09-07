@@ -7,7 +7,6 @@ import opencsp.csta.types.DeviceCategory;
 public class SIPPhone extends Device {
     private String ipAddress;
     private int port = 5060;
-    private boolean uaCstaEnabled = false;
 
     public SIPPhone(String deviceId, String ipAddress, int port) {
         this.deviceId = deviceId;
@@ -17,6 +16,6 @@ public class SIPPhone extends Device {
     }
 
     public String toString() {
-        return "[SIPPhone deviceId=" + deviceId + ", state=" + state + ", ipAddress=" + ipAddress + ", port=" + port + ", uaCstaEnabled=" + uaCstaEnabled + "]";
+        return "[SIPPhone deviceId=" + deviceId + ", state=" + state + ", ipAddress=" + ipAddress + ", port=" + port + "]";
     }
 }
