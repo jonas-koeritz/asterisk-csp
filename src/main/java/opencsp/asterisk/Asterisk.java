@@ -68,7 +68,6 @@ public class Asterisk implements ManagerEventListener {
         return true;
     }
 
-
     public void onManagerEvent(ManagerEvent event) {
         if(filterEvents(event)) {
             Log.d(TAG, "Event: " + event.toString());
