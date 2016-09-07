@@ -15,4 +15,10 @@ public interface UAController {
     public abstract void clearConnection();
     public abstract void holdCall();
     public abstract void retrieveCall();
+
+    /**
+     * Make the User Agent initiate a consultation call
+     * @param consultedDevice the device to consult
+     */
+    public abstract void consultationCall(String consultedDevice);
 }

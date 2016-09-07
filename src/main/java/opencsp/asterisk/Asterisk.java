@@ -132,6 +132,9 @@ public class Asterisk implements ManagerEventListener {
                 case "HangupRequestEvent":
                     handleEvent((HangupRequestEvent) event);
                     break;
+                case "SoftHangupRequestEvent":
+                    handleEvent((SoftHangupRequestEvent) event);
+                    break;
                 default:
                     break;
             }
@@ -158,6 +161,19 @@ public class Asterisk implements ManagerEventListener {
             d.setCategory(DeviceCategory.NetworkInterface);
             d.setState(DeviceState.Idle);
             provider.addDevice(d);
+        }
+    }
+
+    private void handleEvent(SoftHangupRequestEvent softHangupRequestEvent) {
+        //SoftHangupRequestEvent with Cause = Unallocated will get dispatched on transfer
+        if(softHangupRequestEvent.getCause() == 1) {
+            DeviceId deviceId = channelToDeviceId(softHangupRequestEvent.getChannel());
+            Device device = provider.findDeviceById(deviceId);
+            List<Connection> connections = provider.findConnectionsForDevice(device);
+            //If two connections exist
+            if(connections.size() == 2) {
+                provider.transferred(connections.get(0), connections.get(1));
+            }
         }
     }
 

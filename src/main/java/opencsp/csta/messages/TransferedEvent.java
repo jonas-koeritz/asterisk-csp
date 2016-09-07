@@ -12,7 +12,7 @@ public class TransferedEvent extends CSTAEvent implements CSTAXmlSerializable {
     private Connection primaryOldCall;
     private DeviceId transferringDevice;
     private DeviceId transferredToDevice;
-    private List<Connection> transferredConnections;
+    private Connection oldConnection;
     private EventCause cause;
 
     public Element toXmlElement(Document doc, String tagName) {
@@ -22,12 +22,21 @@ public class TransferedEvent extends CSTAEvent implements CSTAXmlSerializable {
         e.appendChild(transferringDevice.toXmlElement(doc, "transferringDevice"));
         e.appendChild(transferredToDevice.toXmlElement(doc, "transferredToDevice"));
         Element connectionList = doc.createElement("transferredConnections");
-        transferredConnections.forEach(
-                c -> connectionList.appendChild(c.toXmlElement(doc, "connectionListItem"))
-        );
+        Element connectionListItem = doc.createElement("connectionListItem");
+        connectionList.appendChild(oldConnection.toXmlElement(doc, "oldConnection"));
+        connectionList.appendChild(connectionListItem);
         e.appendChild(connectionList);
         e.appendChild(cause.toXmlElement(doc));
         return e;
+    }
+
+    public TransferedEvent(CrossReferenceId monitorCrossRefID, Connection primaryOldCall, DeviceId transferredToDevice) {
+        this.monitorCrossRefID = monitorCrossRefID;
+        this.primaryOldCall = primaryOldCall;
+        this.transferringDevice = primaryOldCall.getDeviceId();
+        this.transferredToDevice = transferredToDevice;
+        this.oldConnection = primaryOldCall;
+        this.cause = EventCause.SingleStepTransfer;
     }
 }
 

@@ -1,7 +1,6 @@
 package opencsp.csta;
 
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http2.Http2FrameReader;
 import opencsp.Log;
 import opencsp.asterisk.Asterisk;
 import opencsp.csta.messages.*;
@@ -137,6 +136,52 @@ public class Provider {
         return connections.stream().filter(c -> c.getDeviceId().toString().equals(d.getDeviceId().toString())).collect(Collectors.toList());
     }
 
+    public void transferred(Connection c1, Connection c2) {
+        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(c1.getDeviceId());
+        for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
+            Call call2 = getCallByCallId(c2.getCallId());
+            for(Connection c : call2.getConnections()) {
+                //Not me
+                if(!c.getDeviceId().toString().equals(c2.getDeviceId().toString())) {
+                    c2 = c;
+                }
+            }
+            TransferedEvent e = new TransferedEvent(
+                    p.getValue().getCrossReferenceId(),
+                    c1,
+                    c2.getPresentation() != null ? new DeviceId(c2.getPresentation()) : c2.getDeviceId());
+            sendEventToClient(p.getKey().getClientChannel(), e);
+        }
+        Device d = findDeviceById(c1.getDeviceId());
+
+        DeviceId self = c1.getDeviceId();
+        Call primaryCall = getCallByCallId(c1.getCallId());
+        Call secondaryCall = getCallByCallId(c2.getCallId());
+
+        Iterator<Connection> primaryCallConnections = primaryCall.getConnections().iterator();
+        while(primaryCallConnections.hasNext()) {
+            Connection c = primaryCallConnections.next();
+            if(c.getDeviceId().toString().equals(self.toString())) {
+                connectionCleared(d, d, c);
+                primaryCallConnections.remove();
+            }
+        }
+
+        Iterator<Connection> secondaryCallConnections = secondaryCall.getConnections().iterator();
+        while(secondaryCallConnections.hasNext()) {
+            Connection c = secondaryCallConnections.next();
+            if(c.getDeviceId().toString().equals(self.toString())) {
+                connectionCleared(d, d, c);
+                secondaryCallConnections.remove();
+            } else {
+                primaryCall.addConnection(c);
+                c.setCallId(primaryCall.getCallId());
+                secondaryCallConnections.remove();
+            }
+        }
+        removeCall(secondaryCall);
+    }
+
 
 
     private CSTAXmlSerializable startSession(StartApplicationSession message, Channel clientChannel) {
@@ -220,6 +265,10 @@ public class Provider {
             case "RetrieveCall":
                 RetrieveCall mRetrieveCall = (RetrieveCall)message;
                 response = retrieveCall(mRetrieveCall);
+                break;
+            case "ConsultationCall":
+                ConsultationCall mConsultationCall = (ConsultationCall)message;
+                response = consultationCall(mConsultationCall);
                 break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
@@ -319,6 +368,7 @@ public class Provider {
         return null;
     }
 
+
     private MakeCallResponse makeCall(MakeCall makeCall) {
         Connection c = newConnection(makeCall.getCallingDevice(), "");
         c.setConnectionState(ConnectionState.Initiated);
@@ -331,6 +381,21 @@ public class Provider {
             Log.d(TAG, "No UAController available for deviceID=" + makeCall.getCallingDevice().toString());
         }
         return new MakeCallResponse(c);
+    }
+
+    private ConsultationCallResponse consultationCall(ConsultationCall consultationCall) {
+        Connection c = newConnection(consultationCall.getExistingCall().getDeviceId(), "");
+        c.setConnectionState(ConnectionState.Initiated);
+        addCall(c.getCallId(), c);
+
+        UAController ua = getUaControllerForDevice(consultationCall.getExistingCall().getDeviceId().toString());
+        if(ua != null) {
+            Log.d(TAG, "UAController.consultationCall()");
+            ua.consultationCall(consultationCall.getConsultedDevice().toString());
+        } else {
+            Log.d(TAG, "No UAController available for deviceID=" + consultationCall.getExistingCall().getDeviceId().toString());
+        }
+        return new ConsultationCallResponse(c);
     }
 
     private ClearConnectionResponse clearConnection(ClearConnection clearConnection) {
@@ -362,13 +427,15 @@ public class Provider {
 
     private HoldCallResponse holdCall(HoldCall holdCall) {
         Device device = findDeviceById(holdCall.getCallToBeHeld().getDeviceId());
-        held(device, holdCall.getCallToBeHeld());
 
         UAController ua = getUaControllerForDevice(device.getDeviceId().toString());
+        //If an UAController is available, let the UA decide how to handle this request (Unify OpenStage Phones will decide on their own which call to hold)
         if(ua != null) {
             Log.d(TAG, "UAController.holdCall()");
             ua.holdCall();
         } else {
+            //Notify Provider of request (Will generate CSTA Events)
+            held(device, holdCall.getCallToBeHeld());
             Log.d(TAG, "No UAController available for deviceID=" + device.getDeviceId().toString());
         }
         return new HoldCallResponse();
@@ -377,13 +444,14 @@ public class Provider {
     private RetrieveCallResponse retrieveCall(RetrieveCall retrieveCall) {
         Device device = findDeviceById(retrieveCall.getCallToBeRetrieved().getDeviceId());
 
-        retrieved(device, retrieveCall.getCallToBeRetrieved());
-
+        //If an UAController is available, let the UA decide how to handle this request (Unify OpenStage Phones will decide on their own which call to retrieve)
         UAController ua = getUaControllerForDevice(device.getDeviceId().toString());
         if(ua != null) {
             Log.d(TAG, "UAController.retrieveCall()");
             ua.retrieveCall();
         } else {
+            //Notify Provider of request (Will generate CSTA Events)
+            retrieved(device, retrieveCall.getCallToBeRetrieved());
             Log.d(TAG, "No UAController available for deviceID=" + device.getDeviceId().toString());
         }
         return new RetrieveCallResponse();

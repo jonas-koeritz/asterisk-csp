@@ -114,6 +114,23 @@ public class UaCSTAController implements UAController {
     }
 
     @Override
+    public void consultationCall(String consultedDevice) {
+        StringBuilder msg = new StringBuilder(prepareSipMessage());
+
+        StringBuilder body = new StringBuilder();
+        body.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n");
+        body.append("<ConsultationCall xmlns=\"http://www.ecma-international.org/standards/ecma-323/csta/ed3\">");
+        body.append("<existingCall><callID></callID><deviceID>").append(deviceId).append("</deviceID></existingCall>");
+        body.append("<consultedDevice>").append(consultedDevice).append("</consultedDevice>");
+        body.append("</ConsultationCall>\r\n");
+
+        msg.append("Content-Length: ").append(body.length()).append("\r\n\r\n");
+        msg.append(body.toString());
+
+        transmitMessage(msg.toString());
+    }
+
+    @Override
     public void retrieveCall() {
         StringBuilder msg = new StringBuilder(prepareSipMessage());
 
