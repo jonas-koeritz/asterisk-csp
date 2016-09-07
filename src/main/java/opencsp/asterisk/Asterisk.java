@@ -53,6 +53,7 @@ public class Asterisk implements ManagerEventListener {
 
         trySendAction(new SipPeersAction());
         trySendAction(new PJSIPShowEndpointsAction());
+        trySendAction(new QueueStatusAction());
     }
 
     private boolean filterEvents(ManagerEvent e) {
@@ -135,12 +136,22 @@ public class Asterisk implements ManagerEventListener {
                 case "SoftHangupRequestEvent":
                     handleEvent((SoftHangupRequestEvent) event);
                     break;
+                case "QueueParamsEvent":
+                    handleEvent((QueueParamsEvent) event);
+                    break;
                 default:
                     break;
             }
         } catch (ClassCastException ex) {
             Log.e(TAG, ex.getMessage());
         }
+    }
+
+    private void handleEvent(QueueParamsEvent queueParamsEvent) {
+        Device q = new Device(queueParamsEvent.getQueue());
+        q.setCategory(DeviceCategory.GroupAcd);
+        q.setState(queueParamsEvent.getCalls() > 0 ? DeviceState.InUse : DeviceState.Idle);
+        provider.addDevice(q);
     }
 
     private void handleEvent(PeerEntryEvent peerEntryEvent) {
@@ -337,6 +348,8 @@ public class Asterisk implements ManagerEventListener {
         Device dB = provider.findDeviceById(channelToDeviceId(dialBeginEvent.getDestChannel()));
         Connection outgoingConnection = provider.getConnectionByUniqueId(dialBeginEvent.getDestUniqueId());
 
+        //outgoingConnection.setConnectionState(ConnectionState.Alerting);
+
         if(dB.getCategory().equals(DeviceCategory.NetworkInterface)) {
             outgoingConnection.setPresentation(dialBeginEvent.getConnectedLineNum());
         }
@@ -362,6 +375,11 @@ public class Asterisk implements ManagerEventListener {
         Connection newChannelConnection = provider.newConnection(channelToDeviceId(newChannelEvent.getChannel()), newChannelEvent.getUniqueId());
         if(newChannelDevice.getCategory().equals(DeviceCategory.NetworkInterface)) {
             newChannelConnection.setPresentation(newChannelEvent.getCallerIdNum());
+            if(newChannelEvent.getChannelStateDesc().equalsIgnoreCase("Ring")) {
+                //This is an incoming call through a networkInterface
+                provider.addCall(newChannelConnection.getCallId(), newChannelConnection);
+                newChannelConnection.setConnectionState(ConnectionState.Connected);
+            }
         }
     }
 
