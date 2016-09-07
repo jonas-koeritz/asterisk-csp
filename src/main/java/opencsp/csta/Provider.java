@@ -9,7 +9,9 @@ import opencsp.csta.types.*;
 import opencsp.csta.xml.CSTAXmlEncoder;
 import opencsp.csta.xml.CSTAXmlSerializable;
 import opencsp.csta.tcp.CSTATcpMessage;
+import opencsp.devices.SIPPhone;
 import opencsp.uacontroller.UAController;
+import opencsp.uacontroller.unify.UaCSTAController;
 import opencsp.util.ConfigurationProvider;
 
 import java.util.*;
@@ -327,8 +329,17 @@ public class Provider {
     public void addDevice(Device d) {
         if(findDeviceById(d.getDeviceId()) == null) {
             devices.add(d);
-            if(d.getCategory().equals(DeviceCategory.Station)) {
-
+            if(d.getClass().equals(SIPPhone.class)) {
+                SIPPhone phone = (SIPPhone)d;
+                String deviceId = config.getConfigurationValue(d.getDeviceId().toString());
+                switch(deviceId) {
+                    case UaCSTAController.TYPE:
+                        uaControllers.put(deviceId, new UaCSTAController(phone));
+                        break;
+                    default:
+                        Log.d(TAG, "No appropriate UAController for device " + deviceId);
+                        break;
+                }
             }
             Log.d(TAG, "Added new device: " + d.toString());
         } else {
