@@ -1,6 +1,7 @@
 package opencsp.csta;
 
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http2.Http2FrameReader;
 import opencsp.Log;
 import opencsp.asterisk.Asterisk;
 import opencsp.csta.messages.*;
@@ -9,6 +10,7 @@ import opencsp.csta.xml.CSTAXmlEncoder;
 import opencsp.csta.xml.CSTAXmlSerializable;
 import opencsp.csta.tcp.CSTATcpMessage;
 import opencsp.uacontroller.UAController;
+import opencsp.util.ConfigurationProvider;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,6 +22,7 @@ public class Provider {
     private List<Connection> connections;
     private List<Call> calls;
     private CSTASessionManager sessionManager;
+    private ConfigurationProvider config;
 
     private String countryCode;
     private String areaCode;
@@ -41,10 +44,11 @@ public class Provider {
         this.asteriskServer = asterisk;
     }
 
-    private Provider(String countryCode, String areaCode, String systemPrefix) {
-        this.countryCode = countryCode;
-        this.areaCode = areaCode;
-        this.systemPrefix = systemPrefix;
+    private Provider(ConfigurationProvider config) {
+        this.countryCode = config.getConfigurationValue("country_code");
+        this.areaCode = config.getConfigurationValue("area_code");
+        this.systemPrefix = config.getConfigurationValue("system_prefix");
+        this.config = config;
         sessionManager = new CSTASessionManager();
         devices = new ArrayList<Device>();
         connections = new ArrayList<Connection>();
@@ -52,9 +56,9 @@ public class Provider {
         uaControllers = new HashMap<String,UAController>();
     }
 
-    public static Provider getInstance(String countryCode, String areaCode, String systemPrefix) {
+    public static Provider getInstance(ConfigurationProvider config) {
         if(instance == null) {
-            instance = new Provider(countryCode, areaCode, systemPrefix);
+            instance = new Provider(config);
         }
         return instance;
     }
@@ -323,6 +327,9 @@ public class Provider {
     public void addDevice(Device d) {
         if(findDeviceById(d.getDeviceId()) == null) {
             devices.add(d);
+            if(d.getCategory().equals(DeviceCategory.Station)) {
+
+            }
             Log.d(TAG, "Added new device: " + d.toString());
         } else {
             Log.w(TAG, "Duplicate deviceId " + d.getDeviceId() + " not adding device.");

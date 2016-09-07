@@ -4,7 +4,6 @@ import opencsp.uacontroller.UAController;
 
 public class UaCSTAController implements UAController {
     public static final String TAG = "UaCSTAController";
-    public static final String DEVICE_TYPE = "unify";
 
     @Override
     public void makeCall() {

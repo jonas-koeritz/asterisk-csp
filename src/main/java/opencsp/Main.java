@@ -24,10 +24,7 @@ public class Main {
 
         ConfigurationProvider config = new ConfigurationProvider();
 
-        Provider cstaServiceProvider = Provider.getInstance(
-                config.getConfigurationValue("country_code"),
-                config.getConfigurationValue("area_code"),
-                config.getConfigurationValue("system_prefix"));
+        Provider cstaServiceProvider = Provider.getInstance(config);
 
         Wbm wbm = new Wbm(8080, cstaServiceProvider);
         wbm.start();
