@@ -46,7 +46,7 @@ public class Asterisk implements ManagerEventListener {
         managerConnection.registerUserEventClass(EndpointListCompleteEvent.class);
         managerConnection.registerUserEventClass(EndpointListEvent.class);
         managerConnection.registerUserEventClass(DialBeginEvent.class);
-
+        managerConnection.registerUserEventClass(QueueCallerJoinEvent.class);
 
         managerConnection.login();
         managerConnection.addEventListener(this);
@@ -139,12 +139,26 @@ public class Asterisk implements ManagerEventListener {
                 case "QueueParamsEvent":
                     handleEvent((QueueParamsEvent) event);
                     break;
+                case "QueueCallerJoinEvent":
+                    handleEvent((QueueCallerJoinEvent) event);
+                    break;
                 default:
                     break;
             }
         } catch (ClassCastException ex) {
             Log.e(TAG, ex.getMessage());
         }
+    }
+
+    private void handleEvent(QueueCallerJoinEvent queueCallerJoinEvent) {
+        Log.d(TAG, queueCallerJoinEvent.toString());
+        Connection c = provider.getConnectionByUniqueId(queueCallerJoinEvent.getLinkedId());
+        c.setConnectionState(ConnectionState.Queued);
+
+        Device q = provider.findDeviceById(queueCallerJoinEvent.getQueue());
+        q.setState(queueCallerJoinEvent.getCount() > 0 ? DeviceState.InUse : DeviceState.Idle);
+        Device d = provider.findDeviceById(channelToDeviceId(queueCallerJoinEvent.getChannel()));
+        provider.queued(d, c, q);
     }
 
     private void handleEvent(QueueParamsEvent queueParamsEvent) {
@@ -348,7 +362,6 @@ public class Asterisk implements ManagerEventListener {
         Device dB = provider.findDeviceById(channelToDeviceId(dialBeginEvent.getDestChannel()));
         Connection outgoingConnection = provider.getConnectionByUniqueId(dialBeginEvent.getDestUniqueId());
 
-        //outgoingConnection.setConnectionState(ConnectionState.Alerting);
 
         if(dB.getCategory().equals(DeviceCategory.NetworkInterface)) {
             outgoingConnection.setPresentation(dialBeginEvent.getConnectedLineNum());

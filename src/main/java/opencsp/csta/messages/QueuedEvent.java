@@ -31,5 +31,14 @@ public class QueuedEvent extends CSTAEvent implements CSTAXmlSerializable {
         e.appendChild(cause.toXmlElement(doc));
         return e;
     }
+
+    public QueuedEvent(CrossReferenceId monitorCrossRefID, Connection queuedConnection, Device queue) {
+        this.queue = queue.getDeviceId();
+        this.callingDevice = !queuedConnection.getPresentation().equals("") ? new DeviceId(queuedConnection.getPresentation()) : queuedConnection.getDeviceId();
+        this.calledDevice = queue.getDeviceId();
+        this.cause = EventCause.Normal;
+        this.queuedConnection = queuedConnection;
+        this.monitorCrossRefID = monitorCrossRefID;
+    }
 }
 
