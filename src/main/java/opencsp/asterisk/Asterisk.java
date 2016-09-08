@@ -149,12 +149,23 @@ public class Asterisk implements ManagerEventListener {
     private void handleEvent(QueueCallerJoinEvent queueCallerJoinEvent) {
         Log.d(TAG, queueCallerJoinEvent.toString());
         Connection c = provider.getConnectionByUniqueId(queueCallerJoinEvent.getLinkedId());
-        c.setConnectionState(ConnectionState.Queued);
+        Call call = provider.getCallByCallId(c.getCallId());
+        c.setConnectionState(ConnectionState.Connected);
 
-        Device q = provider.findDeviceById(queueCallerJoinEvent.getQueue());
-        q.setState(queueCallerJoinEvent.getCount() > 0 ? DeviceState.InUse : DeviceState.Idle);
         Device d = provider.findDeviceById(channelToDeviceId(queueCallerJoinEvent.getChannel()));
-        provider.queued(d, c, q);
+        Device q = provider.findDeviceById(queueCallerJoinEvent.getQueue());
+
+        provider.delivered(d, q, c, c.getPresentation(), null);
+
+        Connection queueConnection = provider.newConnection(q.getDeviceId(), "");
+        queueConnection.setCallId(call.getCallId());
+        queueConnection.setConnectionState(ConnectionState.Queued);
+        call.addConnection(queueConnection);
+        provider.delivered(d, q, queueConnection, c.getPresentation(), null);
+
+        q.setState(queueCallerJoinEvent.getCount() > 0 ? DeviceState.InUse : DeviceState.Idle);
+
+        provider.queued(d, q, queueConnection, q);
     }
 
     private void handleEvent(QueueParamsEvent queueParamsEvent) {

@@ -728,16 +728,29 @@ public class Provider {
         }
     }
 
-    public void queued(Device d, Connection con, Device queue) {
-        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(d.getDeviceId());
+    public void queued(Device callingDevice, Device calledDevice, Connection con, Device queue) {
+        Map<CSTASession, MonitorPoint> points = getMonitorPointsForDevice(callingDevice.getDeviceId());
         for(Map.Entry<CSTASession, MonitorPoint> p : points.entrySet()) {
             QueuedEvent event = new QueuedEvent(
                     p.getValue().getCrossReferenceId(),
                     con,
-                    queue);
+                    callingDevice,
+                    calledDevice,
+                    queue, ConnectionState.Connected);
 
             sendEventToClient(p.getKey().getClientChannel(), event);
-            con.setConnectionState(ConnectionState.Queued);
+        }
+
+        Map<CSTASession, MonitorPoint> queueMonitorPoints = getMonitorPointsForDevice(calledDevice.getDeviceId());
+        for(Map.Entry<CSTASession, MonitorPoint> p : queueMonitorPoints.entrySet()) {
+            QueuedEvent event = new QueuedEvent(
+                    p.getValue().getCrossReferenceId(),
+                    con,
+                    callingDevice,
+                    calledDevice,
+                    queue, ConnectionState.Queued);
+
+            sendEventToClient(p.getKey().getClientChannel(), event);
         }
     }
 
