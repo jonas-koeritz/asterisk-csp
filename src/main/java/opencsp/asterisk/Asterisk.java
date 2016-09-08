@@ -47,6 +47,7 @@ public class Asterisk implements ManagerEventListener {
         managerConnection.registerUserEventClass(EndpointListEvent.class);
         managerConnection.registerUserEventClass(DialBeginEvent.class);
         managerConnection.registerUserEventClass(QueueCallerJoinEvent.class);
+        managerConnection.registerUserEventClass(BlindTransferEvent.class);
 
         managerConnection.login();
         managerConnection.addEventListener(this);
@@ -138,12 +139,19 @@ public class Asterisk implements ManagerEventListener {
                 case "QueueCallerJoinEvent":
                     handleEvent((QueueCallerJoinEvent) event);
                     break;
+                case "BlindTransferEvent":
+                    handleEvent((BlindTransferEvent) event);
+                    break;
                 default:
                     break;
             }
         } catch (ClassCastException ex) {
             Log.e(TAG, ex.getMessage());
         }
+    }
+
+    private void handleEvent(BlindTransferEvent blindTransferEvent) {
+
     }
 
     private void handleEvent(QueueCallerJoinEvent queueCallerJoinEvent) {
