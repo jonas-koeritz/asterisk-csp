@@ -16,14 +16,14 @@ html
                         td #{session.getClientChannel().remoteAddress()}
 
         h3 Active Calls
-        table
+        table(cellspacing="0", cellpadding="0")
             thead
                 tr
                     th Call ID
                     th Connections
             tbody
                 each call in calls
-                    tr
+                    tr(class="call")
                         td #{call.getCallId()}
                         td
                             table

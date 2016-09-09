@@ -175,9 +175,12 @@ public class Asterisk implements ManagerEventListener {
         provider.delivered(d, q, c, c.getPresentation(), null);
 
         Connection queueConnection = provider.newConnection(q.getDeviceId(), "", "Queue/" + q.getDeviceId());
-        queueConnection.setCallId(call.getCallId());
+
+        if(queueConnection.getCallId() != c.getCallId()) {
+            provider.associateConnections(c.getUniqueId(), queueConnection.getUniqueId());
+        }
+
         queueConnection.setConnectionState(ConnectionState.Queued);
-        call.addConnection(queueConnection);
         provider.delivered(d, q, queueConnection, c.getPresentation(), null);
 
         q.setState(queueCallerJoinEvent.getCount() > 0 ? DeviceState.InUse : DeviceState.Idle);
