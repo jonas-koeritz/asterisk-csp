@@ -165,7 +165,7 @@ public class Asterisk implements ManagerEventListener {
 
         provider.delivered(d, q, c, c.getPresentation(), null);
 
-        Connection queueConnection = provider.newConnection(q.getDeviceId(), "");
+        Connection queueConnection = provider.newConnection(q.getDeviceId(), "", "Queue/" + q.getDeviceId());
         queueConnection.setCallId(call.getCallId());
         queueConnection.setConnectionState(ConnectionState.Queued);
         call.addConnection(queueConnection);
@@ -387,7 +387,7 @@ public class Asterisk implements ManagerEventListener {
             provider.findDeviceById(newChannelDevice.getDeviceId()).setState(DeviceState.fromString(newChannelEvent.getChannelStateDesc()));
         }
 
-        Connection newChannelConnection = provider.newConnection(channelToDeviceId(newChannelEvent.getChannel()), newChannelEvent.getUniqueId());
+        Connection newChannelConnection = provider.newConnection(channelToDeviceId(newChannelEvent.getChannel()), newChannelEvent.getUniqueId(), newChannelEvent.getChannel());
         if(newChannelDevice.getCategory().equals(DeviceCategory.NetworkInterface)) {
             newChannelConnection.setPresentation(newChannelEvent.getCallerIdNum());
             if(newChannelEvent.getChannelStateDesc().equalsIgnoreCase("Ring")) {

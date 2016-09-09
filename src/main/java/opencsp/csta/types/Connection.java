@@ -10,12 +10,14 @@ public class Connection implements CSTAXmlSerializable {
     String uniqueId;
     ConnectionState state = ConnectionState.Null;
     private String presentation = "";
+    private String channel;
 
-    public Connection(int callId, DeviceId deviceId, String uniqueId) {
+    public Connection(int callId, DeviceId deviceId, String uniqueId, String channel) {
         this.callId = callId;
         this.deviceId = deviceId;
         this.uniqueId = uniqueId;
         this.presentation = "";
+        this.channel = channel;
     }
 
     public void setUniqueId(String uniqueId) {
@@ -76,5 +78,13 @@ public class Connection implements CSTAXmlSerializable {
 
     public String toString() {
         return "[Connection: deviceId=" + deviceId.toString() + ", callId=" + callId + ", uniqueId=" + uniqueId + "]";
+    }
+
+    public String getChannel() {
+        return channel;
+    }
+
+    public void setChannel(String channel) {
+        this.channel = channel;
     }
 }

@@ -7,12 +7,14 @@ import opencsp.csta.types.DeviceCategory;
 public class SIPPhone extends Device {
     private String ipAddress;
     private int port = 5060;
+    private String technology;
 
-    public SIPPhone(String deviceId, String ipAddress, int port) {
+    public SIPPhone(String deviceId, String technology, String ipAddress, int port) {
         this.deviceId = deviceId;
         this.category = DeviceCategory.Station;
         this.ipAddress = ipAddress;
         this.port = port;
+        this.technology = technology;
     }
 
     public String toString() {
@@ -25,5 +27,9 @@ public class SIPPhone extends Device {
 
     public int getPort() {
         return port;
+    }
+
+    public String getTechnology() {
+        return technology;
     }
 }

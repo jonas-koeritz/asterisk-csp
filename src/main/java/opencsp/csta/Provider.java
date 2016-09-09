@@ -275,6 +275,10 @@ public class Provider {
                 AnswerCall mAnswerCall = (AnswerCall)message;
                 response = answerCall(mAnswerCall);
                 break;
+            case "ReconnectCall":
+                ReconnectCall mReconnectCall = (ReconnectCall)message;
+                response = reconnectCall(mReconnectCall);
+                break;
             default:
                 Log.e(TAG, "Could not handle message type " + message.getClass().getSimpleName());
                 break;
@@ -375,7 +379,7 @@ public class Provider {
 
 
     private MakeCallResponse makeCall(MakeCall makeCall) {
-        Connection c = newConnection(makeCall.getCallingDevice(), "");
+        Connection c = newConnection(makeCall.getCallingDevice(), "", "");
         c.setConnectionState(ConnectionState.Initiated);
         addCall(c.getCallId(), c);
         UAController ua = getUaControllerForDevice(makeCall.getCallingDevice().toString());
@@ -389,7 +393,7 @@ public class Provider {
     }
 
     private ConsultationCallResponse consultationCall(ConsultationCall consultationCall) {
-        Connection c = newConnection(consultationCall.getExistingCall().getDeviceId(), "");
+        Connection c = newConnection(consultationCall.getExistingCall().getDeviceId(), "", "");
         c.setConnectionState(ConnectionState.Initiated);
         addCall(c.getCallId(), c);
 
@@ -457,6 +461,46 @@ public class Provider {
             Log.d(TAG, "No UAController available for deviceID=" + device.getDeviceId().toString());
         }
         return new HoldCallResponse();
+    }
+
+    private ReconnectCallResponse reconnectCall(ReconnectCall reconnectCall) {
+        Device d = findDeviceById(reconnectCall.getActiveCall().getDeviceId());
+        Call callToBeCleared = findCallForConnection(reconnectCall.getActiveCall());
+        Call callToBeRetrieved = findCallForConnection(reconnectCall.getHeldCall());
+
+
+        //Clear the active Call
+        Iterator<Connection> clearedConnections = callToBeCleared.getConnections().iterator();
+        while (clearedConnections.hasNext()) {
+            Connection con = clearedConnections.next();
+            connectionCleared(
+                    findDeviceById(con.getDeviceId()),
+                    d,
+                    con
+            );
+            clearedConnections.remove();
+            removeConnection(con);
+        }
+        removeCall(callToBeCleared);
+
+        UAController ua = getUaControllerForDevice(d.getDeviceId().toString());
+        if(ua != null) {
+            Log.d(TAG, "UAController.clearConnection()");
+            ua.clearConnection(reconnectCall.getActiveCall());
+        } else {
+            Log.d(TAG, "No UAController available for deviceID=" + d.getDeviceId().toString());
+        }
+
+
+        //Retrieve the held Call
+        if(ua != null) {
+            Log.d(TAG, "UAController.retrieveCall()");
+            ua.retrieveCall();
+        } else {
+            Log.d(TAG, "No UAController available for deviceID=" + d.getDeviceId().toString());
+        }
+
+        return new ReconnectCallResponse();
     }
 
     private RetrieveCallResponse retrieveCall(RetrieveCall retrieveCall) {
@@ -650,7 +694,7 @@ public class Provider {
         return points;
     }
 
-    public Connection newConnection(DeviceId deviceId, String uniqueId) {
+    public Connection newConnection(DeviceId deviceId, String uniqueId, String channel) {
         //If this is a station, find any half open calls for this device
         Device device = findDeviceById(deviceId);
         if(device.getCategory() == DeviceCategory.Station) {
@@ -662,16 +706,17 @@ public class Provider {
 
             if(halfOpenConnection != null) {
                 halfOpenConnection.setUniqueId(uniqueId);
+                halfOpenConnection.setChannel(channel);
                 Log.d(TAG, "Associated connection to uniqueId " + uniqueId);
                 return halfOpenConnection;
             } else {
-                Connection c = new Connection(lastCallId++, deviceId, uniqueId);
+                Connection c = new Connection(lastCallId++, deviceId, uniqueId, channel);
                 Log.d(TAG, "Created new connection: " + c.toString());
                 connections.add(c);
                 return c;
             }
         } else {
-            Connection c = new Connection(lastCallId++, deviceId, uniqueId);
+            Connection c = new Connection(lastCallId++, deviceId, uniqueId, channel);
             Log.d(TAG, "Created new connection: " + c.toString());
             connections.add(c);
             return c;

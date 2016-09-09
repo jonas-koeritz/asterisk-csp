@@ -31,6 +31,7 @@ html
                                     tr
                                         th Device ID
                                         th Unique ID
+                                        th Channel
                                         th State
                                         th Presentation
                                 tbody
@@ -38,6 +39,7 @@ html
                                         tr
                                             td #{connection.getDeviceId().toString()}
                                             td #{connection.getUniqueId()}
+                                            td #{connection.getChannel()}
                                             td #{connection.getConnectionState().toString()}
                                             td #{connection.getPresentation()}
 
