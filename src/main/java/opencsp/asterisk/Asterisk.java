@@ -142,6 +142,9 @@ public class Asterisk implements ManagerEventListener {
                 case "BlindTransferEvent":
                     handleEvent((BlindTransferEvent) event);
                     break;
+                case "MusicOnHoldStart":
+                    handleEvent((MusicOnHoldStartEvent)event);
+                    break;
                 default:
                     break;
             }
@@ -152,6 +155,12 @@ public class Asterisk implements ManagerEventListener {
 
     private void handleEvent(BlindTransferEvent blindTransferEvent) {
 
+    }
+
+    private void handleEvent(MusicOnHoldStartEvent musicOnHoldStartEvent) {
+        Log.d(TAG, musicOnHoldStartEvent.toString());
+        Connection c = provider.getConnectionByUniqueId(musicOnHoldStartEvent.getUniqueId());
+        Call call = provider.getCallByCallId(c.getCallId());
     }
 
     private void handleEvent(QueueCallerJoinEvent queueCallerJoinEvent) {
@@ -174,6 +183,7 @@ public class Asterisk implements ManagerEventListener {
         q.setState(queueCallerJoinEvent.getCount() > 0 ? DeviceState.InUse : DeviceState.Idle);
 
         provider.queued(d, q, queueConnection, q);
+        provider.established(d, q, q, c, c.getPresentation().equals("") ? null : c.getPresentation(), null, null);
     }
 
     private void handleEvent(QueueParamsEvent queueParamsEvent) {
