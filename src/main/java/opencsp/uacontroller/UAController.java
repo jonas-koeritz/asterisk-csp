@@ -1,6 +1,8 @@
 package opencsp.uacontroller;
 
 
+import opencsp.csta.types.Connection;
+
 public interface UAController {
     /**
      * Make the User Agent initiate a call
@@ -12,7 +14,7 @@ public interface UAController {
      * Make the User Agent answer any ringing call
      */
     public abstract void answerCall();
-    public abstract void clearConnection();
+    public abstract void clearConnection(Connection connectionToBeCleared);
     public abstract void holdCall();
     public abstract void retrieveCall();
 

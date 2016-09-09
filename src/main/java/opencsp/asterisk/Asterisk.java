@@ -185,7 +185,7 @@ public class Asterisk implements ManagerEventListener {
 
     private void handleEvent(PeerEntryEvent peerEntryEvent) {
         if(peerEntryEvent.getDynamic()) {
-            SIPPhone d = new SIPPhone(peerEntryEvent.getObjectName(), peerEntryEvent.getIpAddress(), peerEntryEvent.getIpPort());
+            SIPPhone d = new SIPPhone(peerEntryEvent.getObjectName(), "SIP", peerEntryEvent.getIpAddress(), peerEntryEvent.getIpPort());
             if (peerEntryEvent.getStatus() != null && peerEntryEvent.getStatus().contains("OK")) {
                 d.setState(DeviceState.Idle);
             } else if (peerEntryEvent.getStatus().contains("UNKNOWN")) {
@@ -207,7 +207,7 @@ public class Asterisk implements ManagerEventListener {
 
     private void handleEvent(EndpointListEvent endpointListEvent) {
         if(endpointListEvent.getAuths() != null) {
-            SIPPhone d = new SIPPhone(endpointListEvent.getObjectName(), endpointListEvent.getIpAddress(), endpointListEvent.getIpPort());
+            SIPPhone d = new SIPPhone(endpointListEvent.getObjectName(), "PJSIP", endpointListEvent.getIpAddress(), endpointListEvent.getIpPort());
             if(endpointListEvent.getDeviceState() != null && endpointListEvent.getDeviceState().contains("Not in use")) {
                 d.setState(DeviceState.Idle);
             } else if(endpointListEvent.getDeviceState().contains("In use")) {

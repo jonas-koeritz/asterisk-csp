@@ -2,6 +2,7 @@ package opencsp.uacontroller.unify;
 
 import opencsp.Log;
 import opencsp.csta.Provider;
+import opencsp.csta.types.Connection;
 import opencsp.devices.SIPPhone;
 import opencsp.uacontroller.UAController;
 import opencsp.util.ConfigurationProvider;
@@ -82,7 +83,7 @@ public class UaCSTAController implements UAController {
     }
 
     @Override
-    public void clearConnection() {
+    public void clearConnection(Connection connectionToBeCleared) {
         StringBuilder msg = new StringBuilder(prepareSipMessage());
 
         StringBuilder body = new StringBuilder();

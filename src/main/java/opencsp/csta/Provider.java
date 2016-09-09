@@ -10,6 +10,7 @@ import opencsp.csta.xml.CSTAXmlSerializable;
 import opencsp.csta.tcp.CSTATcpMessage;
 import opencsp.devices.SIPPhone;
 import opencsp.uacontroller.UAController;
+import opencsp.uacontroller.asterisk.AMIController;
 import opencsp.uacontroller.unify.UaCSTAController;
 import opencsp.util.ConfigurationProvider;
 
@@ -435,7 +436,7 @@ public class Provider {
         UAController ua = getUaControllerForDevice(device.getDeviceId().toString());
         if(ua != null) {
             Log.d(TAG, "UAController.clearConnection()");
-            ua.clearConnection();
+            ua.clearConnection(clearConnection.getConnectionToBeCleared());
         } else {
             Log.d(TAG, "No UAController available for deviceID=" + device.getDeviceId().toString());
         }
@@ -497,6 +498,9 @@ public class Provider {
                 switch(deviceType) {
                     case UaCSTAController.TYPE:
                         uaControllers.put(d.getDeviceId().toString(), new UaCSTAController(phone, config));
+                        break;
+                    case AMIController.TYPE:
+                        uaControllers.put(d.getDeviceId().toString(), new AMIController(asteriskServer, phone, config));
                         break;
                     default:
                         Log.d(TAG, "No appropriate UAController for device " + d.getDeviceId().toString());
