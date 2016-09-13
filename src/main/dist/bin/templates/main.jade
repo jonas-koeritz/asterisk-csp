@@ -1,0 +1,58 @@
+doctype html
+html
+    head
+        link(rel="stylesheet", href="styles/main.css")
+    body
+        h3 Active CSTA Sessions
+        table
+            thead
+                tr
+                    th Session ID
+                    th TCP-Channel
+            tbody
+                each session in sessions
+                    tr
+                        td #{session.getSessionId()}
+                        td #{session.getClientChannel().remoteAddress()}
+
+        h3 Active Calls
+        table(cellspacing="0", cellpadding="0")
+            thead
+                tr
+                    th Call ID
+                    th Connections
+            tbody
+                each call in calls
+                    tr(class="call")
+                        td #{call.getCallId()}
+                        td
+                            table
+                                thead
+                                    tr
+                                        th Device ID
+                                        th Unique ID
+                                        th Channel
+                                        th State
+                                        th Presentation
+                                tbody
+                                    each connection in call.getConnections()
+                                        tr
+                                            td #{connection.getDeviceId().toString()}
+                                            td #{connection.getUniqueId()}
+                                            td #{connection.getChannel()}
+                                            td #{connection.getConnectionState().toString()}
+                                            td #{connection.getPresentation()}
+
+        h3 Devices
+        table
+            thead
+                tr
+                    th Device ID
+                    th Device Category
+                    th State
+            tbody
+                each device in devices
+                    tr
+                        td #{device.getDeviceId()}
+                        td #{device.getCategory()}
+                        td #{device.getState()}

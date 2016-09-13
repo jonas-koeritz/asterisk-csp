@@ -28,7 +28,7 @@ public class Wbm {
 
         staticFileLocation("/public");
         jade = new JadeTemplateEngine();
-        Log.d(TAG, "Jade TemplateLoader: " + jade.configuration().getTemplateLoader().toString());
+        jade.configuration().setTemplateLoader(new WbmTemplateLoader("./templates"));
         get("/", (req, res) -> new ModelAndView(map, "main"), jade);
     }
 
