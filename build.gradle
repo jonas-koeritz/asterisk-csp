@@ -30,6 +30,7 @@ dependencies {
     compile 'io.netty:netty-all:5.0.0.Alpha2'
     compile 'org.asteriskjava:asterisk-java:1.0.0-final'
     compile 'ch.qos.logback:logback-classic:1.1.6'
+    compile 'org.reflections:reflections:0.9.10'
     testCompile 'junit:junit:4.12'
 }
 
@@ -39,5 +40,4 @@ jar {
     }
 }
 
-
-mainClassName = "opencsp.Main"
+mainClassName = 'opencsp.Main';

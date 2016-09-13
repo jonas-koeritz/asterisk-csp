@@ -31,7 +31,7 @@ public class CSTATcpMessageHandler extends ChannelHandlerAdapter {
             Log.e(TAG, ex.getMessage());
         }
 
-        messageClasses = ClassFinder.find("opencsp.csta.messages");
+        messageClasses = ClassFinder.findCstaMessageClasses();
         this.provider = provider;
     }
 
@@ -42,9 +42,7 @@ public class CSTATcpMessageHandler extends ChannelHandlerAdapter {
             Document xml = documentBuilder.parse(new InputSource(new StringReader(message.getBody())));
             String messageType = xml.getDocumentElement().getNodeName();
 
-
-
-            if( messageClasses.stream().filter(c -> c.getSimpleName().equals(messageType)).count() > 0) {
+            if(messageClasses.stream().filter(c -> c.getSimpleName().equals(messageType)).findFirst().isPresent()) {
                 Class messageClass = messageClasses.stream().filter(c -> c.getSimpleName().equals(messageType)).findFirst().get();
                 CSTAMessage parsedMessage = null;
 
