@@ -27,7 +27,7 @@ public class XmlGeneration extends TestCase {
 
         ServiceInitiatedEvent serviceInitiatedEvent = new ServiceInitiatedEvent(
                 new CrossReferenceId(0),
-                new Connection("12345", new DeviceId("212700")),
+                new Connection(12345, new DeviceId("212700"), "", "Test/12345"),
                 new DeviceId("212700")
         );
 

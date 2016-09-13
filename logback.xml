@@ -10,7 +10,7 @@
     <logger name="org.eclipse.jetty" level="OFF" />
     <!--<logger name="org.asteriskjava.manager.internal" level="OFF" />-->
     <logger name="io.netty" level="OFF" />
-    <logger name="spark" level="OFF" />
+    <!--<logger name="spark" level="OFF" />-->
 
     <root level="DEBUG">
         <appender-ref ref="STDOUT" />

@@ -1,16 +1,23 @@
 package opencsp.util;
 
+import opencsp.Log;
+
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 public class ConfigurationProvider {
+    private static final String TAG = "ConfigurationProvider";
+
     private static final String PROPERTIES_FILE_NAME = "config.properties";
     private Properties prop;
 
     public ConfigurationProvider() {
         try {
-            InputStream inputStream = getClass().getClassLoader().getResourceAsStream(PROPERTIES_FILE_NAME);
+            Log.d(TAG, "Current Directory: " + Paths.get(".").toAbsolutePath().normalize().toString());
+            InputStream inputStream = new FileInputStream(PROPERTIES_FILE_NAME);
             prop = new Properties();
 
             if (inputStream != null) {

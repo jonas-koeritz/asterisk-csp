@@ -15,9 +15,6 @@ sourceSets {
         java {
             srcDir 'src/main/java'
         }
-        resources {
-            srcDir 'src/main/resources'
-        }
     }
 
     test {
@@ -37,7 +34,10 @@ dependencies {
 }
 
 jar {
-
+    manifest {
+        attributes 'Main-Class': 'opencsp.Main'
+    }
 }
+
 
 mainClassName = "opencsp.Main"
