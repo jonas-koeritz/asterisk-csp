@@ -14,8 +14,21 @@ public interface UAController {
      * Make the User Agent answer any ringing call
      */
     public abstract void answerCall();
+
+    /**
+     * Clear the currently active connection
+     * @param connectionToBeCleared the connection to be cleared (if possible to choose)
+     */
     public abstract void clearConnection(Connection connectionToBeCleared);
+
+    /**
+     * Put the currently active call on hold
+     */
     public abstract void holdCall();
+
+    /**
+     * Retrieve a held call
+     */
     public abstract void retrieveCall();
 
     /**

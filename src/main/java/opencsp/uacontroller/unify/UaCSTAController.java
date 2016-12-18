@@ -149,7 +149,12 @@ public class UaCSTAController implements UAController {
 
     private String prepareSipMessage() {
         StringBuilder msg = new StringBuilder();
-        msg.append("NOTIFY sip:").append(deviceId).append("@").append(ipAddress).append(":").append(port)
+        msg.append("NOTIFY sip:")
+                .append(deviceId)
+                .append("@")
+                .append(ipAddress)
+                .append(":")
+                .append(port)
                 .append(";transport=udp SIP/2.0\r\n");
         msg.append("VIA: SIP/2.0/UDP ").append(localIp).append(":").append(localSipPort).append(";branch=z01235\r\n");
         msg.append("From: <sip:").append(deviceId).append("@").append(ipAddress).append(";transport=udp>;tag=e66CkC8b6\r\n");
