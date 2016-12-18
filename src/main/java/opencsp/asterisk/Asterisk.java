@@ -4,6 +4,7 @@ import opencsp.Log;
 import opencsp.csta.Provider;
 import opencsp.csta.messages.EstablishedEvent;
 import opencsp.csta.types.*;
+import opencsp.devices.Queue;
 import opencsp.devices.SIPPhone;
 import org.apache.commons.io.IOExceptionWithCause;
 import org.asteriskjava.live.*;
@@ -190,8 +191,7 @@ public class Asterisk implements ManagerEventListener {
     }
 
     private void handleEvent(QueueParamsEvent queueParamsEvent) {
-        Device q = new Device(queueParamsEvent.getQueue());
-        q.setCategory(DeviceCategory.GroupAcd);
+        Device q = new Queue(queueParamsEvent.getQueue());
         q.setState(queueParamsEvent.getCalls() > 0 ? DeviceState.InUse : DeviceState.Idle);
         provider.addDevice(q);
     }
