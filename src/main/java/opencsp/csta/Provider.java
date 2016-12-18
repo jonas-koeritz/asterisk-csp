@@ -57,7 +57,7 @@ public class Provider {
         devices = new ArrayList<Device>();
         connections = new ArrayList<Connection>();
         calls = new ArrayList<Call>();
-        uaControllers = new HashMap<String,UAController>();
+        uaControllers = new HashMap<String, UAController>();
     }
 
     public static Provider getInstance(ConfigurationProvider config) {
