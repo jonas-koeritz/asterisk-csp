@@ -1,29 +1,36 @@
 package opencsp.csta.types;
 
+import opencsp.util.State;
+
 public enum DeviceState {
-    Unknown("UNKNOWN"),
-    Idle("NOT_INUSE"),
-    InUse("INUSE"),
-    Busy("BUSY"),
-    Invalid("INVALID"),
-    Unavailable("UNAVAILABLE"),
-    Ringing("RINGING"),
-    RingInUse("RINGINUSE"),
-    Ring("RING"),
-    OnHold("ONHOLD");
+    Unknown(new State("UNKNOWN")),
+    Idle(new State("NOT_INUSE")),
+    InUse(new State("INUSE")),
+    Busy(new State("BUSY")),
+    Invalid(new State("INVALID")),
+    Unavailable(new State("UNAVAILABLE")),
+    Ringing(new State("RINGING")),
+    RingInUse(new State("RINGINUSE")),
+    Ring(new State("RING")),
+    OnHold(new State("ONHOLD"));
 
-    private final String state;
+    private final State state;
 
-    DeviceState(String s) {
+    public State getState()
+    {
+        return state;
+    }
+
+    DeviceState(State s) {
         state = s;
     }
 
-    public boolean equals(String otherState) {
-        return otherState != null && state.equals(otherState);
+    public boolean equals(State otherState) {
+        return otherState != null && state.getName().equals(otherState);
     }
 
     public String toString() {
-        return this.state;
+        return this.state.getName();
     }
 
     public static DeviceState fromString(String deviceState) {

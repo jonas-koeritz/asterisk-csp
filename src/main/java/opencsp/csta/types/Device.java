@@ -1,30 +1,30 @@
 package opencsp.csta.types;
 
+import opencsp.util.IStateMachine;
+import opencsp.util.State;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class Device {
+public class Device implements IStateMachine {
     protected DeviceCategory category = DeviceCategory.Station;
     protected String deviceId = "";
     protected DeviceState state;
 
-    private List<CSTAEvent> pendingEvents;
-
-
+    protected List<CSTAEvent> pendingEvents;
 
     public DeviceId getDeviceId() {
         return new DeviceId(deviceId);
     }
 
     public Device() {
-        pendingEvents = new ArrayList<CSTAEvent>();
+        pendingEvents = new ArrayList<>();
     }
-
 
 
     public Device(String deviceId) {
         this.deviceId = deviceId;
-        pendingEvents = new ArrayList<CSTAEvent>();
+        pendingEvents = new ArrayList<>();
     }
 
     public DeviceCategory getCategory() {
@@ -45,7 +45,6 @@ public class Device {
     }
 
 
-
     public DeviceState getState() {
         return state;
     }
@@ -57,5 +56,25 @@ public class Device {
 
     public String toString() {
         return "[Device deviceId=" + deviceId + ", category=" + category + ", state=" + state + "]";
+    }
+
+    @Override
+    public State getCurrentState() {
+        return new State(state.toString());
+    }
+
+    @Override
+    public boolean transitionPossible(State from, State to) {
+        return false;
+    }
+
+    @Override
+    public List<State> getAllStates() {
+        List<State> states = new ArrayList<>();
+        for(DeviceState s : DeviceState.values())
+        {
+            states.add(s.getState());
+        }
+        return states;
     }
 }
